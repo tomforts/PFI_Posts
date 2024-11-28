@@ -24,8 +24,7 @@ async function Init_UI() {
         showCreatePostForm();
     });
     $('#abort').on("click", async function () {
-        eraseContent();
-        showPosts();
+        await showPosts();
     });
     $('#aboutCmd').on("click", function () {
         showAbout();
@@ -110,6 +109,8 @@ function intialView() {
 }
 async function showPosts(reset = false) {
     intialView();
+    hideLogin();
+    hideSignUp();
     $("#viewTitle").text("Fil de nouvelles");
     periodic_Refresh_paused = false;
     await postsPanel.show(reset);
@@ -169,12 +170,26 @@ function showAbout() {
 
 function showLogin() {
     hidePosts();
+    $("loginForm").show();
     $("#signUpContainer").hide();
     $("#hiddenIcon").show();
     $("#hiddenIcon2").show();
     $('#abort').show();
-    renderUserForm();
+    renderLoginForm();
     //$('#loginContainer').show();
+}
+
+function showSignUp(){
+    $("userForm").show();
+
+}
+
+function hideLogin(){
+    $("loginForm").hide();
+}
+
+function hideSignUp(){
+    $("userForm").hide();
 }
 
 function showSignUp() {
@@ -285,11 +300,6 @@ function updateDropDownMenu() {
             <i class="menuIcon fa fa-sign-in-alt mx-2"></i> Connexion
         </div>
         `));
-    DDMenu.append($(`
-        <div class="dropdown-item menuItemLayout" id="signUpCmd">
-            <i class="menuIcon fa fa-sign-up-alt mx-2"></i> Inscription
-        </div>
-        `));
     DDMenu.append($(`<div class="dropdown-divider"></div> `));
     DDMenu.append($(`
         <div class="dropdown-item menuItemLayout" id="allCatCmd">
@@ -316,9 +326,6 @@ function updateDropDownMenu() {
     });
     $('#loginCmd').on("click", function () {
         showLogin();
-    });
-    $('#signUpCmd').on("click", function () {
-        showSignUp();
     });
     $('#allCatCmd').on("click", async function () {
         selectedCategory = "";
@@ -579,7 +586,59 @@ function getFormData($form) {
 //////////////////////// User Forms rendering /////////////////////////////////////////////////////////////////
 
 
-async function renderEditPostForm(id) {
+
+function renderLoginForm(){
+    $("#viewTitle").text("Connexion");
+    $("#content").append(`
+        <form class="form" id="loginForm">
+            <input type="hidden" name="Id" value=""/>
+            <div class="form-group">
+            <input 
+                class="form-control Email"
+                name="Email"
+                id="Email"
+                placeholder="Courriel"
+                required
+                RequireMessage="Veuillez entrer votre courriel" 
+                InvalidMessage="Veuillez entrer un courriel valide"
+                value=""
+            />
+            <input 
+                class="form-control Password"
+                name="Password"
+                id="Password"
+                placeholder="Mot de passe"
+                required
+                RequireMessage="Veuillez entrer votre mot de passe" 
+                InvalidMessage="Veuillez entrer un mot de passe valide"
+                value=""
+            />
+            </div>
+           <br>
+            <input type="submit" value="Enregistrer" id="login" class="btn btn-primary">
+            <div class="dropdown-divider"></div>
+            <input type="button" value="Inscription" id="signup" class="btn btn-secondary">
+        </form>
+    `);
+    initFormValidation(); // important do to after all html injection!
+    $('loginForm').on("submit", async function (event) {
+        event.preventDefault();
+        let user = getFormData($("#loginForm"));
+        showWaitingGif();
+        //ici faire login de l'API post
+        let result = await API_SaveContact(contact, create);
+        if (result)
+            renderPosts();
+        else
+            renderError("Une erreur est survenue! " + API_getcurrentHttpError());
+    });
+    $('#signup').on("click", async function () {
+        hideLogin();
+       await renderUserForm();
+    });
+}
+//va falloir faire le edit pour le account pis le delete aussi
+/*async function renderEditPostForm(id) {
     $('#commit').show();
     addWaitingGif();
     let response = await Posts_API.Get(id)
@@ -631,7 +690,7 @@ async function renderDeletePostForm(id) {
         }
     } else
         showError(Posts_API.currentHttpError);
-}
+}*/
 function newUser() {
     let User = {};
     User.Id = 0;
@@ -646,13 +705,12 @@ function eraseContent() {
 }
 function renderUserForm(user = null) {
     //deux premiere ligne sont le petit x en haut de lecran
-    //$("#createContact").hide();
-    $("#abort").show();
     hidePosts();
+    //eraseContent();
     let create = user == null;
     if (create) {
         user = newUser();
-        user.Avatar = "wwwroot/Posts/no-avatar.png";
+        user.Avatar = "no-avatar.png";
     }
     $("#viewTitle").text(create ? "Création d'un compte" : "Modification du profil");
     $("#content").append(`
@@ -682,26 +740,27 @@ function renderUserForm(user = null) {
             />
             </div>
              <div class="form-group">
-             <label for="Email" class="form-label">Courriel </label>
+             
+             <label for="Password" class="form-label">Mot de passe </label>
             <input 
-                class="form-control Email"
-                name="Email"
-                id="Email"
-                placeholder="Courriel"
+                class="form-control Password"
+                name="Password"
+                id="Password"
+                placeholder="Mot de passe"
                 required
-                RequireMessage="Veuillez entrer votre courriel" 
-                InvalidMessage="Veuillez entrer un courriel valide"
-                value="${user.Email}"
+                RequireMessage="Veuillez entrer votre mot de passe" 
+                InvalidMessage="Veuillez entrer un mot de passe valide"
+                value="${user.Password}"
             />
             <input 
-                class="form-control Email"
-                name="Email"
-                id="Email"
-                placeholder="Courriel"
+                class="form-control Password"
+                name="PasswordVerification"
+                id="PasswordVerification"
+                placeholder="Vérification"
                 required
-                RequireMessage="Veuillez entrer votre courriel" 
-                InvalidMessage="Veuillez entrer un courriel valide"
-                value="${user.Email}"
+                RequireMessage="Veuillez entrer votre mot de passe" 
+                InvalidMessage="Veuillez entrer un mot de passe valide"
+                value="${user.Password}"
             />
             </div>
             <label for="Name" class="form-label">Nom </label>
@@ -725,108 +784,41 @@ function renderUserForm(user = null) {
                    waitingImage="Loading_icon.gif">
             </div>
             <hr>
-            <input type="submit" value="Enregistrer" id="saveContact" class="btn btn-primary">
+            <input type="submit" value="Enregistrer" id="saveUser" class="btn btn-primary">
             <input type="button" value="Annuler" id="cancel" class="btn btn-secondary">
         </form>
     `);
+    //faut faire en sorte que le password est ecrit en *
     initImageUploaders();
     initFormValidation(); // important do to after all html injection!
-    $('#contactForm').on("submit", async function (event) {
+    $('#userForm').on("submit", async function (event) {
         event.preventDefault();
         let user = getFormData($("#userForm"));
-        showWaitingGif();
-        let result = await API_SaveContact(contact, create);
-        if (result)
-            renderContacts();
-        else
-            renderError("Une erreur est survenue! " + API_getcurrentHttpError());
-    });
-    $('#cancel').on("click", function () {
-        renderContacts();
-    });
-}
-function renderPostForm(post = null) {
-    let create = post == null;
-    if (create) post = newPost();
-    $("#form").show();
-    $("#form").empty();
-    $("#form").append(`
-        <form class="form" id="postForm">
-            <input type="hidden" name="Id" value="${post.Id}"/>
-             <input type="hidden" name="Date" value="${post.Date}"/>
-            <label for="Category" class="form-label">Catégorie </label>
-            <input 
-                class="form-control"
-                name="Category"
-                id="Category"
-                placeholder="Catégorie"
-                required
-                value="${post.Category}"
-            />
-            <label for="Title" class="form-label">Titre </label>
-            <input 
-                class="form-control"
-                name="Title" 
-                id="Title" 
-                placeholder="Titre"
-                required
-                RequireMessage="Veuillez entrer un titre"
-                InvalidMessage="Le titre comporte un caractère illégal"
-                value="${post.Title}"
-            />
-            <label for="Url" class="form-label">Texte</label>
-             <textarea class="form-control" 
-                          name="Text" 
-                          id="Text"
-                          placeholder="Texte" 
-                          rows="9"
-                          required 
-                          RequireMessage = 'Veuillez entrer une Description'>${post.Text}</textarea>
-
-            <label class="form-label">Image </label>
-            <div class='imageUploaderContainer'>
-                <div class='imageUploader' 
-                     newImage='${create}' 
-                     controlId='Image' 
-                     imageSrc='${post.Image}' 
-                     waitingImage="Loading_icon.gif">
-                </div>
-            </div>
-            <div id="keepDateControl">
-                <input type="checkbox" name="keepDate" id="keepDate" class="checkbox" checked>
-                <label for="keepDate"> Conserver la date de création </label>
-            </div>
-            <input type="submit" value="Enregistrer" id="savePost" class="btn btn-primary displayNone">
-        </form>
-    `);
-    if (create) $("#keepDateControl").hide();
-
-    initImageUploaders();
-    initFormValidation(); // important do to after all html injection!
-
-    $("#commit").click(function () {
-        $("#commit").off();
-        return $('#savePost').trigger("click");
-    });
-    $('#postForm').on("submit", async function (event) {
-        event.preventDefault();
-        let post = getFormData($("#postForm"));
-        if (post.Category != selectedCategory)
-            selectedCategory = "";
-        if (create || !('keepDate' in post))
-            post.Date = Local_to_UTC(Date.now());
-        delete post.keepDate;
-        post = await Posts_API.Save(post, create);
-        if (!Posts_API.error) {
-            await showPosts();
-            postsPanel.scrollToElem(post.Id);
+        if(create){
+            user.Created = Local_to_UTC(Date.now());
         }
+        //showWaitingGif();
+        let result = await Posts_API.SaveUser(user, create);
+        if (result)
+            renderPosts();
         else
-            showError("Une erreur est survenue! ", Posts_API.currentHttpError);
+            showError("Une erreur est survenue! " + Posts_API.currentHttpError);
     });
     $('#cancel').on("click", async function () {
-        await showPosts();
+        $("userForm").hide();
+        showPosts();
     });
+
+}
+
+function renderError(message) {
+    $("#content").append(
+        $(`
+            <div class="errorContainer">
+                ${message}
+            </div>
+        `)
+    );
 }
 
 

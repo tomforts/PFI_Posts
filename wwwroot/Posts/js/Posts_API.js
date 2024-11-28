@@ -78,4 +78,39 @@ class Posts_API {
             });
         });
     }
-}
+
+    static async SaveUser(user, create){
+        Posts_API.initHttpState();
+        return new Promise(resolve => {
+            $.ajax({
+                url: create ? Posts_API.API_URL :  API_URL + "/" + user.Id,
+                type: create ? "POST" : "PUT",
+                contentType: 'application/json',
+                data: JSON.stringify(user),
+                success: (/*data*/) => { resolve(data); },
+                error: (xhr) => {Posts_API.setHttpErrorState(xhr); resolve(null); }
+            });
+        });
+    } 
+
+    static async DeleteUser(id){
+        return new Promise(resolve => {
+            $.ajax({
+                url: Posts_API.API_URL + "/" + id,
+                type: "DELETE",
+                success: () => { currentHttpError = ""; resolve(true); },
+                error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
+            });
+        });
+    }
+
+
+    }
+
+    
+
+    //ici faire une methode ajouter user, login, verify email, faut faire un retrieve loguser, pour get son id et tous ses info.... toute les methode backend ici
+    //GetAccounts GetAccount
+    //storedloguser
+    //token chepa quoi tokenmanager
+    //inspecteur section application pour voir le session storage
