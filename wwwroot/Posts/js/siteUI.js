@@ -28,6 +28,10 @@ async function Init_UI() {
     });
     $('#aboutCmd').on("click", function () {
         showAbout();
+
+    });
+    $('#loginCmd').on("click", function () {
+        showLogin();
     });
     $("#showSearch").on('click', function () {
         toogleShowKeywords();
@@ -154,6 +158,7 @@ function showDeletePostForm(id) {
 }
 function showAbout() {
     hidePosts();
+    $('#loginContainer').hide();
     $("#hiddenIcon").show();
     $("#hiddenIcon2").show();
     $('#abort').show();
@@ -161,6 +166,25 @@ function showAbout() {
     $("#aboutContainer").show();
 }
 
+function showLogin() {
+    hidePosts();
+    $("#signUpContainer").hide();
+    $("#hiddenIcon").show();
+    $("#hiddenIcon2").show();
+    $('#abort').show();
+    $("#viewTitle").text("Connexion...");
+    $('#loginContainer').show();
+}
+
+function showSignUp() {
+    hidePosts();
+    $('#loginContainer').hide();
+    $("#hiddenIcon").show();
+    $("#hiddenIcon2").show();
+    $('#abort').show();
+    $("#viewTitle").text("Inscription...");
+    $('#signUpContainer').show();
+}
 //////////////////////////// Posts rendering /////////////////////////////////////////////////////////////
 
 //////////////////////////// Posts rendering /////////////////////////////////////////////////////////////
@@ -270,12 +294,29 @@ function updateDropDownMenu() {
     })
     DDMenu.append($(`<div class="dropdown-divider"></div> `));
     DDMenu.append($(`
+        <div class="dropdown-item menuItemLayout" id="loginCmd">
+            <i class="menuIcon fa fa-sign-in-alt mx-2"></i> Connexion
+        </div>
+        `));
+    DDMenu.append($(`
+        <div class="dropdown-item menuItemLayout" id="signUpCmd">
+            <i class="menuIcon fa fa-sign-up-alt mx-2"></i> Inscription
+        </div>
+        `));
+    DDMenu.append($(`<div class="dropdown-divider"></div> `));
+    DDMenu.append($(`
         <div class="dropdown-item menuItemLayout" id="aboutCmd">
             <i class="menuIcon fa fa-info-circle mx-2"></i> À propos...
         </div>
         `));
     $('#aboutCmd').on("click", function () {
         showAbout();
+    });
+    $('#loginCmd').on("click", function () {
+        showLogin();
+    });
+    $('#signUpCmd').on("click", function () {
+        showSignUp();
     });
     $('#allCatCmd').on("click", async function () {
         selectedCategory = "";

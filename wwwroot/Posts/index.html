@@ -49,6 +49,63 @@
             </div>
             <div id="form"></div>
             <div id="errorContainer" class="errorContainer"></div>
+            <div id="loginContainer" class="loginContainer">
+                <div class="loginPanel">
+                    <div class="loginHeader">Authentification</div>
+                    <div class="loginBody">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="existingUserEmail"><i class="fa fa-user"></i></span>
+                            <input type="text" id="login" class="form-control" placeholder="E-mail"
+                                   aria-label="E-mail" aria-describedby="existingUserEmail">
+                        </div>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon-password"><i class="fa fa-lock"></i></span>
+                            <input type="password" id="password" class="form-control" placeholder="Mot de passe"
+                                   aria-label="Mot de passe" aria-describedby="basic-addon-password">
+                        </div>
+                        <div class="input-group mb-3">
+                            <button id="loginCmd" class="btn btn-primary">Connexion</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="signUpContainer" class="signUpContainer">
+                <div class="signUpPanel">
+                    <div class="signUpHeader">Inscription</div>
+                    <div class="signUpBody">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="newUserEmail"><i class="fa fa-user"></i></span>
+                            <input type="text" id="signUp" class="form-control" placeholder="E-mail"
+                                   aria-label="E-mail" aria-describedby="newUserEmail">
+                            <input type="text" id="signUpConfirm" class="form-control" placeholder="Confirmer e-mail"
+                                   aria-label="Confirmer e-mail" aria-describedby="newUserEmail">
+                        </div>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="newUserPassword"><i class="fa fa-lock"></i></span>
+                            <input type="password" id="signUpPassword" class="form-control" placeholder="Mot de passe"
+                                   aria-label="Mot de passe" aria-describedby="basic-addon-password">
+                            <input type="password" id="newUserPassWordConfirm" class="form-control"
+                                   placeholder="Confirmer le mot de passe" aria-label="Confirmer le mot de passe"
+                            aria-describedby="newUserPassWordConfirm">
+                        </div>
+                        <input type="text" id="signUpName" class="form-control" placeholder="Nom"
+                                   aria-label="Nom" aria-describedby="newUserName">
+                        </div>
+                        <div class="imageUploader" id="avatarContent">
+                            <input type="file" id="imageFile" accept="image/*" style="display:none" />
+                            <div id="imagePreview" class="imagePreview"></div>
+                            <div id="imageCmd" class="imageCmd">
+                                <i class="fa fa-camera" title="Uploader une image"></i>
+                            </div>
+                        <div class="input-group mb-3">
+                            <button id="signUpCmd2" class="btn btn-primary">Inscription</button>
+                        </div>
+                        <div class="input-group mb-3">
+                            <button id="loginCmd2" class="btn btn-secondary">Connexion</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div id="aboutContainer" class="aboutContainer">
                 <img src="news-logo.png" alt="" style="width:25%">
                 <h2>Fil de nouvelles</h2>
