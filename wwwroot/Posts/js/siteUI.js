@@ -2,7 +2,7 @@
 ////// 2024
 //////////////////////////////
 
-const periodicRefreshPeriod = 10;
+const periodicRefreshPeriod = 2;
 const waitingGifTrigger = 2000;
 const minKeywordLenth = 3;
 const keywordsOnchangeDelay = 500;
@@ -10,6 +10,7 @@ const keywordsOnchangeDelay = 500;
 let categories = [];
 let selectedCategory = "";
 let currentETag = "";
+let currentPostsCount = -1;
 let periodic_Refresh_paused = false;
 let postsPanel;
 let itemLayout;
@@ -24,14 +25,10 @@ async function Init_UI() {
         showCreatePostForm();
     });
     $('#abort').on("click", async function () {
-        await showPosts();
+        showPosts();
     });
     $('#aboutCmd').on("click", function () {
         showAbout();
-
-    });
-    $('#loginCmd').on("click", function () {
-        showLogin();
     });
     $("#showSearch").on('click', function () {
         toogleShowKeywords();
@@ -46,6 +43,7 @@ async function Init_UI() {
 /////////////////////////// Search keywords UI //////////////////////////////////////////////////////////
 
 function installKeywordsOnkeyupEvent() {
+
     $("#searchKeys").on('keyup', function () {
         clearTimeout(keywordsOnchangeTimger);
         keywordsOnchangeTimger = setTimeout(() => {
@@ -109,8 +107,6 @@ function intialView() {
 }
 async function showPosts(reset = false) {
     intialView();
-    hideLogin();
-    hideSignUp();
     $("#viewTitle").text("Fil de nouvelles");
     periodic_Refresh_paused = false;
     await postsPanel.show(reset);
@@ -160,7 +156,6 @@ function showDeletePostForm(id) {
 }
 function showAbout() {
     hidePosts();
-    $('#loginContainer').hide();
     $("#hiddenIcon").show();
     $("#hiddenIcon2").show();
     $('#abort').show();
@@ -168,51 +163,31 @@ function showAbout() {
     $("#aboutContainer").show();
 }
 
-function showLogin() {
-    hidePosts();
-    $("loginForm").show();
-    $("#signUpContainer").hide();
-    $("#hiddenIcon").show();
-    $("#hiddenIcon2").show();
-    $('#abort').show();
-    renderLoginForm();
-    //$('#loginContainer').show();
-}
-
-function showSignUp(){
-    $("userForm").show();
-
-}
-
-function hideLogin(){
-    $("loginForm").hide();
-}
-
-function hideSignUp(){
-    $("userForm").hide();
-}
-
-function showSignUp() {
-    hidePosts();
-    $('#loginContainer').hide();
-    $("#hiddenIcon").show();
-    $("#hiddenIcon2").show();
-    $('#abort').show();
-    renderUserForm();
-
-   // $('#signUpContainer').show();
-}
 //////////////////////////// Posts rendering /////////////////////////////////////////////////////////////
 
 //////////////////////////// Posts rendering /////////////////////////////////////////////////////////////
 
 function start_Periodic_Refresh() {
+    $("#reloadPosts").addClass('white');
+    $("#reloadPosts").on('click', async function () {
+        $("#reloadPosts").addClass('white');
+        postsPanel.resetScrollPosition();
+        await showPosts();
+    })
     setInterval(async () => {
         if (!periodic_Refresh_paused) {
             let etag = await Posts_API.HEAD();
-            if (currentETag != etag) {
+            // the etag contain the number of model records in the following form
+            // xxx-etag
+            let postsCount = parseInt(etag.split("-")[0]);
+            if (currentETag != etag) {           
+                if (postsCount != currentPostsCount) {
+                    console.log("postsCount", postsCount)
+                    currentPostsCount = postsCount;
+                    $("#reloadPosts").removeClass('white');
+                } else
+                    await showPosts();
                 currentETag = etag;
-                await showPosts();
             }
         }
     },
@@ -232,10 +207,11 @@ async function renderPosts(queryString) {
     let response = await Posts_API.Get(queryString);
     if (!Posts_API.error) {
         currentETag = response.ETag;
+        currentPostsCount = parseInt(currentETag.split("-")[0]);
         let Posts = response.data;
         if (Posts.length > 0) {
             Posts.forEach(Post => {
-                postsPanel.itemsPanel.append(renderPost(Post));
+                postsPanel.append(renderPost(Post));
             });
         } else
             endOfData = true;
@@ -296,12 +272,6 @@ function updateDropDownMenu() {
     let selectClass = selectedCategory === "" ? "fa-check" : "fa-fw";
     DDMenu.empty();
     DDMenu.append($(`
-        <div class="dropdown-item menuItemLayout" id="loginCmd">
-            <i class="menuIcon fa fa-sign-in-alt mx-2"></i> Connexion
-        </div>
-        `));
-    DDMenu.append($(`<div class="dropdown-divider"></div> `));
-    DDMenu.append($(`
         <div class="dropdown-item menuItemLayout" id="allCatCmd">
             <i class="menuIcon fa ${selectClass} mx-2"></i> Toutes les catégories
         </div>
@@ -323,9 +293,6 @@ function updateDropDownMenu() {
         `));
     $('#aboutCmd').on("click", function () {
         showAbout();
-    });
-    $('#loginCmd').on("click", function () {
-        showLogin();
     });
     $('#allCatCmd').on("click", async function () {
         selectedCategory = "";
@@ -350,7 +317,7 @@ function attach_Posts_UI_Events_Callback() {
     $(".deleteCmd").on("click", function () {
         showDeletePostForm($(this).attr("postId"));
     });
-
+    $(".moreText").off();
     $(".moreText").click(function () {
         $(`.commentsPanel[postId=${$(this).attr("postId")}]`).show();
         $(`.lessText[postId=${$(this).attr("postId")}]`).show();
@@ -358,10 +325,12 @@ function attach_Posts_UI_Events_Callback() {
         $(`.postTextContainer[postId=${$(this).attr("postId")}]`).addClass('showExtra');
         $(`.postTextContainer[postId=${$(this).attr("postId")}]`).removeClass('hideExtra');
     })
+    $(".lessText").off();
     $(".lessText").click(function () {
         $(`.commentsPanel[postId=${$(this).attr("postId")}]`).hide();
         $(`.moreText[postId=${$(this).attr("postId")}]`).show();
         $(this).hide();
+        postsPanel.scrollToElem($(this).attr("postId"));
         $(`.postTextContainer[postId=${$(this).attr("postId")}]`).addClass('hideExtra');
         $(`.postTextContainer[postId=${$(this).attr("postId")}]`).removeClass('showExtra');
     })
@@ -583,242 +552,4 @@ function getFormData($form) {
     return jsonObject;
 }
 
-//////////////////////// User Forms rendering /////////////////////////////////////////////////////////////////
-
-
-
-function renderLoginForm(){
-    $("#viewTitle").text("Connexion");
-    $("#content").append(`
-        <form class="form" id="loginForm">
-            <input type="hidden" name="Id" value=""/>
-            <div class="form-group">
-            <input 
-                class="form-control Email"
-                name="Email"
-                id="Email"
-                placeholder="Courriel"
-                required
-                RequireMessage="Veuillez entrer votre courriel" 
-                InvalidMessage="Veuillez entrer un courriel valide"
-                value=""
-            />
-            <input 
-                class="form-control Password"
-                name="Password"
-                id="Password"
-                placeholder="Mot de passe"
-                required
-                RequireMessage="Veuillez entrer votre mot de passe" 
-                InvalidMessage="Veuillez entrer un mot de passe valide"
-                value=""
-            />
-            </div>
-           <br>
-            <input type="submit" value="Enregistrer" id="login" class="btn btn-primary">
-            <div class="dropdown-divider"></div>
-            <input type="button" value="Inscription" id="signup" class="btn btn-secondary">
-        </form>
-    `);
-    initFormValidation(); // important do to after all html injection!
-    $('loginForm').on("submit", async function (event) {
-        event.preventDefault();
-        let user = getFormData($("#loginForm"));
-        showWaitingGif();
-        //ici faire login de l'API post
-        let result = await API_SaveContact(contact, create);
-        if (result)
-            renderPosts();
-        else
-            renderError("Une erreur est survenue! " + API_getcurrentHttpError());
-    });
-    $('#signup').on("click", async function () {
-        hideLogin();
-       await renderUserForm();
-    });
-}
-//va falloir faire le edit pour le account pis le delete aussi
-/*async function renderEditPostForm(id) {
-    $('#commit').show();
-    addWaitingGif();
-    let response = await Posts_API.Get(id)
-    if (!Posts_API.error) {
-        let Post = response.data;
-        if (Post !== null)
-            renderPostForm(Post);
-        else
-            showError("Post introuvable!");
-    } else {
-        showError(Posts_API.currentHttpError);
-    }
-    removeWaitingGif();
-}
-async function renderDeletePostForm(id) {
-    let response = await Posts_API.Get(id)
-    if (!Posts_API.error) {
-        let post = response.data;
-        if (post !== null) {
-            let date = convertToFrenchDate(UTC_To_Local(post.Date));
-            $("#form").append(`
-                <div class="post" id="${post.Id}">
-                <div class="postHeader">  ${post.Category} </div>
-                <div class="postTitle ellipsis"> ${post.Title} </div>
-                <img class="postImage" src='${post.Image}'/>
-                <div class="postDate"> ${date} </div>
-                <div class="postTextContainer showExtra">
-                    <div class="postText">${post.Text}</div>
-                </div>
-            `);
-            linefeeds_to_Html_br(".postText");
-            // attach form buttons click event callback
-            $('#commit').on("click", async function () {
-                await Posts_API.Delete(post.Id);
-                if (!Posts_API.error) {
-                    await showPosts();
-                }
-                else {
-                    console.log(Posts_API.currentHttpError)
-                    showError("Une erreur est survenue!");
-                }
-            });
-            $('#cancel').on("click", async function () {
-                await showPosts();
-            });
-
-        } else {
-            showError("Post introuvable!");
-        }
-    } else
-        showError(Posts_API.currentHttpError);
-}*/
-function newUser() {
-    let User = {};
-    User.Id = 0;
-    User.Name = "";
-    User.Email = "";
-    User.Password = "";
-    User.Created = 0;  
-    return User;
-}
-function eraseContent() {
-    $("#content").empty();
-}
-function renderUserForm(user = null) {
-    //deux premiere ligne sont le petit x en haut de lecran
-    hidePosts();
-    //eraseContent();
-    let create = user == null;
-    if (create) {
-        user = newUser();
-        user.Avatar = "no-avatar.png";
-    }
-    $("#viewTitle").text(create ? "Création d'un compte" : "Modification du profil");
-    $("#content").append(`
-        <form class="form" id="userForm">
-            <input type="hidden" name="Id" value="${user.Id}"/>
-            <div class="form-group">
-            <label for="Email" class="form-label">Courriel </label>
-            <input 
-                class="form-control Email"
-                name="Email"
-                id="Email"
-                placeholder="Courriel"
-                required
-                RequireMessage="Veuillez entrer votre courriel" 
-                InvalidMessage="Veuillez entrer un courriel valide"
-                value="${user.Email}"
-            />
-            <input 
-                class="form-control Email"
-                name="ConfirmEmail"
-                id="ConfirmEmail"
-                placeholder="Vérification"
-                required
-                RequireMessage="Veuillez entrer votre courriel" 
-                InvalidMessage="Veuillez entrer un courriel valide"
-                value="${user.Email}"
-            />
-            </div>
-             <div class="form-group">
-             
-             <label for="Password" class="form-label">Mot de passe </label>
-            <input 
-                class="form-control Password"
-                name="Password"
-                id="Password"
-                placeholder="Mot de passe"
-                required
-                RequireMessage="Veuillez entrer votre mot de passe" 
-                InvalidMessage="Veuillez entrer un mot de passe valide"
-                value="${user.Password}"
-            />
-            <input 
-                class="form-control Password"
-                name="PasswordVerification"
-                id="PasswordVerification"
-                placeholder="Vérification"
-                required
-                RequireMessage="Veuillez entrer votre mot de passe" 
-                InvalidMessage="Veuillez entrer un mot de passe valide"
-                value="${user.Password}"
-            />
-            </div>
-            <label for="Name" class="form-label">Nom </label>
-            <input 
-                class="form-control Alpha"
-                name="Name" 
-                id="Name" 
-                placeholder="Nom"
-                required
-                RequireMessage="Veuillez entrer un nom"
-                InvalidMessage="Le nom comporte un caractère illégal" 
-                value="${user.Name}"
-            />
-           
-            <!-- nécessite le fichier javascript 'imageControl.js' -->
-            <label class="form-label">Avatar </label>
-            <div   class='imageUploader' 
-                   newImage='${create}' 
-                   controlId='Avatar' 
-                   imageSrc='${user.Avatar}' 
-                   waitingImage="Loading_icon.gif">
-            </div>
-            <hr>
-            <input type="submit" value="Enregistrer" id="saveUser" class="btn btn-primary">
-            <input type="button" value="Annuler" id="cancel" class="btn btn-secondary">
-        </form>
-    `);
-    //faut faire en sorte que le password est ecrit en *
-    initImageUploaders();
-    initFormValidation(); // important do to after all html injection!
-    $('#userForm').on("submit", async function (event) {
-        event.preventDefault();
-        let user = getFormData($("#userForm"));
-        if(create){
-            user.Created = Local_to_UTC(Date.now());
-        }
-        //showWaitingGif();
-        let result = await Posts_API.SaveUser(user, create);
-        if (result)
-            renderPosts();
-        else
-            showError("Une erreur est survenue! " + Posts_API.currentHttpError);
-    });
-    $('#cancel').on("click", async function () {
-        $("userForm").hide();
-        showPosts();
-    });
-
-}
-
-function renderError(message) {
-    $("#content").append(
-        $(`
-            <div class="errorContainer">
-                ${message}
-            </div>
-        `)
-    );
-}
-
-
+/////////////////////// USER ///////////////////////////////////////////////////////

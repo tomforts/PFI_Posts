@@ -1,6 +1,8 @@
 
 class Posts_API {
-    static API_URL() { return "http://localhost:5000/api/posts" };
+    static Host_URL() { return "http://localhost:5000"; }
+    static API_URL() { return this.Host_URL() + "/api/posts" };
+
     static initHttpState() {
         this.currentHttpError = "";
         this.currentStatus = 0;
@@ -103,14 +105,4 @@ class Posts_API {
             });
         });
     }
-
-
-    }
-
-    
-
-    //ici faire une methode ajouter user, login, verify email, faut faire un retrieve loguser, pour get son id et tous ses info.... toute les methode backend ici
-    //GetAccounts GetAccount
-    //storedloguser
-    //token chepa quoi tokenmanager
-    //inspecteur section application pour voir le session storage
+}
