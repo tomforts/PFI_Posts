@@ -80,17 +80,17 @@ class Posts_API {
             });
         });
     }
-
-    static async SaveUser(user, create){
+//c'est ca qui faut faire pour toutes les autre fonction,,, mais a arranger je pense pas que ca fonctionne comme du monde...
+    static Register(user){
         Posts_API.initHttpState();
         return new Promise(resolve => {
             $.ajax({
-                url: create ? Posts_API.API_URL :  API_URL + "/" + user.Id,
-                type: create ? "POST" : "PUT",
+                url: this.Host_URL() + "/accounts/register",
+                type: "POST",
                 contentType: 'application/json',
                 data: JSON.stringify(user),
-                success: (/*data*/) => { resolve(data); },
-                error: (xhr) => {Posts_API.setHttpErrorState(xhr); resolve(null); }
+                success: (data) => { resolve(data); },
+                error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
             });
         });
     } 
@@ -100,6 +100,17 @@ class Posts_API {
             $.ajax({
                 url: Posts_API.API_URL + "/" + id,
                 type: "DELETE",
+                success: () => { currentHttpError = ""; resolve(true); },
+                error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
+            });
+        });
+    }
+
+    static async Login(user){
+        return new Promise(resolve => {
+            $.ajax({
+                url: "accounts/" + user.id,
+                type: "POST",
                 success: () => { currentHttpError = ""; resolve(true); },
                 error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
             });

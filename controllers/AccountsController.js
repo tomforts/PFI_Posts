@@ -73,7 +73,6 @@ export default class AccountsController extends Controller {
         const gmail = new Gmail();
         gmail.send(user.Email, 'Courriel confirmé...', html);
     }
-
     //GET : /accounts/verify?id=...&code=.....
     verify() {
         if (this.repository != null) {

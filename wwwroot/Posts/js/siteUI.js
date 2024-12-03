@@ -154,6 +154,20 @@ function showDeletePostForm(id) {
     $("#viewTitle").text("Retrait");
     renderDeletePostForm(id);
 }
+
+function showLogin()
+{
+
+    showForm();
+    $('#commit').hide();
+    renderLoginForm();
+}
+
+function showSignup(){
+    showForm();
+    $('#commit').hide();
+    renderUserForm();
+}
 function showAbout() {
     hidePosts();
     $("#hiddenIcon").show();
@@ -272,6 +286,12 @@ function updateDropDownMenu() {
     let selectClass = selectedCategory === "" ? "fa-check" : "fa-fw";
     DDMenu.empty();
     DDMenu.append($(`
+        <div class="dropdown-item menuItemLayout" id="loginCmd">
+            <i class="menuIcon fa fa-sign-in-alt mx-2"></i> Connexion
+        </div>
+        `));
+    DDMenu.append($(`<div class="dropdown-divider"></div> `));
+    DDMenu.append($(`
         <div class="dropdown-item menuItemLayout" id="allCatCmd">
             <i class="menuIcon fa ${selectClass} mx-2"></i> Toutes les catégories
         </div>
@@ -293,6 +313,10 @@ function updateDropDownMenu() {
         `));
     $('#aboutCmd').on("click", function () {
         showAbout();
+    });
+
+    $('#loginCmd').on("click", function () {
+        showLogin();
     });
     $('#allCatCmd').on("click", async function () {
         selectedCategory = "";
@@ -553,3 +577,182 @@ function getFormData($form) {
 }
 
 /////////////////////// USER ///////////////////////////////////////////////////////
+
+function renderLoginForm(){
+    $("#viewTitle").text("Connexion");
+    $("#form").show();
+    $("#form").empty();
+    $("#form").append(`
+        <form class="form" id="loginForm">
+            <input type="hidden" name="Id" value=""/>
+            <div class="form-group">
+            <input 
+                class="form-control Email"
+                name="Email"
+                id="Email"
+                placeholder="Courriel"
+                required
+                RequireMessage="Veuillez entrer votre courriel" 
+                InvalidMessage="Veuillez entrer un courriel valide"
+                value=""
+            />
+            <input 
+                class="form-control Password"
+                name="Password"
+                id="Password"
+                placeholder="Mot de passe"
+                required
+                RequireMessage="Veuillez entrer votre mot de passe" 
+                InvalidMessage="Veuillez entrer un mot de passe valide"
+                value=""
+            />
+            </div>
+           <br>
+            <input type="submit" value="Connexion" id="login" class="btn btn-primary">
+            <div class="dropdown-divider"></div>
+            <input type="button" value="Inscription" id="signup" class="btn btn-secondary">
+        </form>
+    `);
+    initFormValidation(); // important do to after all html injection!
+    $('loginForm').on("submit", async function (event) {
+        event.preventDefault();
+        let user = getFormData($("#loginForm"));
+        showWaitingGif();
+        //ici faire login comme dans le ppost form
+        let result = await Posts_API.Login(user);
+        if (!Posts_API.error)
+            renderPosts();
+        else
+            renderError("Une erreur est survenue! " + API_getcurrentHttpError());
+    });
+    $('#signup').on("click", async function () {
+        showSignup();
+    });
+}
+//va falloir faire le edit pour le account pis le delete aussi
+
+function newUser() {
+    let User = {};
+    User.Id = 0;
+    User.Name = "";
+    User.Email = "";
+    User.Password = "";
+    //ici faut faire en sorte que created = la date  créer
+    return User;
+}
+function eraseContent() {
+    $("#content").empty();
+}
+function renderUserForm(user = null) {
+    hidePosts();
+    let create = user == null;
+    if (create) {
+        user = newUser();
+        user.Avatar = "no-avatar.png";
+    }
+    $("#viewTitle").text(create ? "Création d'un compte" : "Modification du profil");
+    $("#form").show();
+    $("#form").empty();
+    $("#form").append(`
+        <form class="form" id="userForm">
+            <input type="hidden" name="Id" value="${user.Id}"/>
+            <div class="form-group">
+            <label for="Email" class="form-label">Courriel </label>
+            <input 
+                class="form-control Email"
+                name="Email"
+                id="Email"
+                placeholder="Courriel"
+                required
+                RequireMessage="Veuillez entrer votre courriel" 
+                InvalidMessage="Veuillez entrer un courriel valide"
+                value="${user.Email}"
+            />
+            <input 
+                class="form-control Email"
+                name="ConfirmEmail"
+                id="ConfirmEmail"
+                placeholder="Vérification"
+                required
+                RequireMessage="Veuillez entrer votre courriel" 
+                InvalidMessage="Veuillez entrer un courriel valide"
+                value="${user.Email}"
+            />
+            </div>
+             <div class="form-group">
+             
+             <label for="Password" class="form-label">Mot de passe </label>
+            <input 
+                class="form-control Password"
+                name="Password"
+                id="Password"
+                placeholder="Mot de passe"
+                required
+                RequireMessage="Veuillez entrer votre mot de passe" 
+                InvalidMessage="Veuillez entrer un mot de passe valide"
+                value="${user.Password}"
+            />
+            <input 
+                class="form-control Password"
+                name="PasswordVerification"
+                id="PasswordVerification"
+                placeholder="Vérification"
+                required
+                RequireMessage="Veuillez entrer votre mot de passe" 
+                InvalidMessage="Veuillez entrer un mot de passe valide"
+                value="${user.Password}"
+            />
+            </div>
+            <label for="Name" class="form-label">Nom </label>
+            <input 
+                class="form-control Alpha"
+                name="Name" 
+                id="Name" 
+                placeholder="Nom"
+                required
+                RequireMessage="Veuillez entrer un nom"
+                InvalidMessage="Le nom comporte un caractère illégal" 
+                value="${user.Name}"
+            />
+           
+            <!-- nécessite le fichier javascript 'imageControl.js' -->
+            <label class="form-label">Avatar </label>
+            <div   class='imageUploader' 
+                   newImage='${create}' 
+                   controlId='Avatar' 
+                   imageSrc='${user.Avatar}' 
+                   waitingImage="Loading_icon.gif">
+            </div>
+            <hr>
+            <input type="submit" value="Enregistrer" id="saveUser" class="btn btn-primary">
+            <input type="button" value="Annuler" id="cancel" class="btn btn-secondary">
+        </form>
+    `);
+    //faut faire en sorte que le password est ecrit en *
+    initImageUploaders();
+    initFormValidation(); // important do to after all html injection!
+    $('#userForm').on("submit", async function (event) {
+        event.preventDefault();
+        let user = getFormData($("#userForm"));
+        if(create){
+            user.Created = Local_to_UTC(Date.now());
+        }
+        //ici faut juste faire en sorte que email de confirmation et password confirmation n'est pas inclu dans la request..
+        await Posts_API.Register(user);
+        if (!Posts_API.error)
+            renderPosts();
+        else
+            showError("Une erreur est survenue! " + Posts_API.currentHttpError);
+    });
+    $('#cancel').on("click", async function () {
+        showPosts();
+    });
+
+}
+
+
+//pour faire la page de gestion dusager, faire comme tp session passer cad de faire une liste avec tous les usages et ils ont 3 points a droite de leur image et non, le premier c'est
+//l'option de changer les droit donc en clicant ca va faire promote de accountcontroller , un truc bloquer qui va faire block de account controller et l'autre truc jspu c koi 
+
+//httpcontext, apiserver, router,,,, tracer
+//localhostblabla/token
