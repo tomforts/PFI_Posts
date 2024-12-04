@@ -94,6 +94,21 @@ class Posts_API {
             });
         });
     } 
+//voir dans server.js, il ny a pas de post login de mis dans le serveur etrange
+
+    static Login(user){
+        Posts_API.initHttpState();
+        return new Promise(resolve => {
+            $.ajax({
+                url: this.Host_URL() + "/token",
+                type: "POST",
+                contentType: 'application/json',
+                data: JSON.stringify(user),
+                success: (data) => { resolve(data); },
+                error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
+            });
+        });
+    }
 
     static async DeleteUser(id){
         return new Promise(resolve => {
@@ -106,14 +121,5 @@ class Posts_API {
         });
     }
 
-    static async Login(user){
-        return new Promise(resolve => {
-            $.ajax({
-                url: "accounts/" + user.id,
-                type: "POST",
-                success: () => { currentHttpError = ""; resolve(true); },
-                error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
-            });
-        });
-    }
+   
 }

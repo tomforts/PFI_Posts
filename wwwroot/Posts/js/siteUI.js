@@ -583,8 +583,12 @@ function renderLoginForm(){
     $("#form").show();
     $("#form").empty();
     $("#form").append(`
+        
+        <span id="RegisterMessage" style="font-size: 1.5em; display: block; margin-bottom: 10px;">
+        </span>
         <form class="form" id="loginForm">
             <input type="hidden" name="Id" value=""/>
+            
             <div class="form-group">
             <input 
                 class="form-control Email"
@@ -597,6 +601,7 @@ function renderLoginForm(){
                 value=""
             />
             <input 
+                type="password"
                 class="form-control Password"
                 name="Password"
                 id="Password"
@@ -619,7 +624,7 @@ function renderLoginForm(){
         let user = getFormData($("#loginForm"));
         showWaitingGif();
         //ici faire login comme dans le ppost form
-        let result = await Posts_API.Login(user);
+        await Posts_API.Login(user);
         if (!Posts_API.error)
             renderPosts();
         else
@@ -628,6 +633,60 @@ function renderLoginForm(){
     $('#signup').on("click", async function () {
         showSignup();
     });
+}
+
+//à demander au prof, comment le token focntionne, car pour la verification, il faut recupere le login, donc le id du login avec le token jcomprend rien
+function renderVerification(){
+    $("#viewTitle").text("Connexion");
+    $("#form").show();
+    $("#form").empty();
+    $("#form").append(`
+        
+        <span id="RegisterMessage" style="font-size: 1.5em; display: block; margin-bottom: 10px;">
+        </span>
+        <form class="form" id="verifyForm">
+            <input type="hidden" name="Id" value=""/>
+            
+            <div class="form-group">
+            <input 
+                class="form-control Email"
+                name="Email"
+                id="Email"
+                placeholder="Courriel"
+                required
+                RequireMessage="Veuillez entrer votre courriel" 
+                InvalidMessage="Veuillez entrer un courriel valide"
+                value=""
+            />
+            <input 
+                type="password"
+                class="form-control Password"
+                name="Password"
+                id="Password"
+                placeholder="Mot de passe"
+                required
+                RequireMessage="Veuillez entrer votre mot de passe" 
+                InvalidMessage="Veuillez entrer un mot de passe valide"
+                value=""
+            />
+            </div>
+           <br>
+            <input type="submit" value="Vérifier" id="verify" class="btn btn-primary">
+        </form>
+    `);
+    initFormValidation(); // important do to after all html injection!
+    $('loginForm').on("submit", async function (event) {
+        event.preventDefault();
+        let user = getFormData($("#loginForm"));
+        showWaitingGif();
+        //ici faire login comme dans le ppost form
+        await Posts_API.Login(user);
+        if (!Posts_API.error)
+            renderPosts();
+        else
+            renderError("Une erreur est survenue! " + API_getcurrentHttpError());
+    });
+  
 }
 //va falloir faire le edit pour le account pis le delete aussi
 
@@ -640,9 +699,7 @@ function newUser() {
     //ici faut faire en sorte que created = la date  créer
     return User;
 }
-function eraseContent() {
-    $("#content").empty();
-}
+
 function renderUserForm(user = null) {
     hidePosts();
     let create = user == null;
@@ -678,11 +735,13 @@ function renderUserForm(user = null) {
                 InvalidMessage="Veuillez entrer un courriel valide"
                 value="${user.Email}"
             />
+             <span class="error" id="confirmEmailError" style="color: red; "></span>
             </div>
              <div class="form-group">
              
              <label for="Password" class="form-label">Mot de passe </label>
             <input 
+                type="password"
                 class="form-control Password"
                 name="Password"
                 id="Password"
@@ -691,8 +750,10 @@ function renderUserForm(user = null) {
                 RequireMessage="Veuillez entrer votre mot de passe" 
                 InvalidMessage="Veuillez entrer un mot de passe valide"
                 value="${user.Password}"
+                
             />
             <input 
+                type="password"
                 class="form-control Password"
                 name="PasswordVerification"
                 id="PasswordVerification"
@@ -702,6 +763,7 @@ function renderUserForm(user = null) {
                 InvalidMessage="Veuillez entrer un mot de passe valide"
                 value="${user.Password}"
             />
+            <span class="error" id="confirmPasswordError" style="color: red; "></span>
             </div>
             <label for="Name" class="form-label">Nom </label>
             <input 
@@ -728,21 +790,47 @@ function renderUserForm(user = null) {
             <input type="button" value="Annuler" id="cancel" class="btn btn-secondary">
         </form>
     `);
-    //faut faire en sorte que le password est ecrit en *
+  
     initImageUploaders();
-    initFormValidation(); // important do to after all html injection!
+    //faut faire en sorte que le email n'est pas deja utilisé demander au prof
+    //addConflictValidation();
+    initFormValidation(); 
     $('#userForm').on("submit", async function (event) {
         event.preventDefault();
-        let user = getFormData($("#userForm"));
-        if(create){
-            user.Created = Local_to_UTC(Date.now());
+        let isValid = true;
+        
+
+        if ($("#Email").val() !== $("#ConfirmEmail").val()) {
+            $("#confirmEmailError").text("Les courriels ne correspondent pas.");
+            isValid = false;
+        } else {
+            $("#confirmEmailError").text("");
         }
-        //ici faut juste faire en sorte que email de confirmation et password confirmation n'est pas inclu dans la request..
-        await Posts_API.Register(user);
-        if (!Posts_API.error)
-            renderPosts();
-        else
-            showError("Une erreur est survenue! " + Posts_API.currentHttpError);
+    
+        if ($("#Password").val() !== $("#PasswordVerification").val()) {
+            $("#confirmPasswordError").text("Les mots de passe ne correspondent pas.");
+            isValid = false;
+        } else {
+            $("#confirmPasswordError").text("");
+        }
+       
+        if(isValid){
+            let user = getFormData($("#userForm"));
+            delete user.ConfirmEmail;
+            delete user.PasswordVerification;
+            if(create){
+                user.Created = Local_to_UTC(Date.now());
+            }
+            //ici faut juste faire en sorte que email de confirmation et password confirmation n'est pas inclu dans la request..
+            await Posts_API.Register(user);
+            if (!Posts_API.error){
+                $("#RegisterMessage").text = "Votre compte a été créé. Veuillez réccupérer votre code de vérification dans vos courriels, on vous le demandera à la prochaine connexion!"
+                showLogin();
+            }
+            else
+                showError("Une erreur est survenue! " + Posts_API.currentHttpError);
+        }
+        
     });
     $('#cancel').on("click", async function () {
         showPosts();
