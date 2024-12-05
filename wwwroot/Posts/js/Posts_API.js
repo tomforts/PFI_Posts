@@ -95,8 +95,38 @@ class Posts_API {
         });
     } 
 //voir dans server.js, il ny a pas de post login de mis dans le serveur etrange
+//C'EST LE TOKEN QUON SAVE
+//faut faire un retrieve remove et add de session storage (SET, GET , REMOVE)
+//quand on login, on l<ajoute
+    static SetConnectedToken(token){
+        sessionStorage.setItem("connectedUserToken", token);
+    }
 
+    static SetConnectedUser(token){
+        sessionStorage.setItem("connectedUser", JSON.stringify(token.User));
+    }
+
+    static GetConnectedToken(){
+        let token = sessionStorage.getItem("connectedUserToken");
+        return token;
+    }
+
+    static GetConnectedUser(){
+        let user = JSON.parse(sessionStorage.getItem("connectedUser"));
+        return user;
+    }
+
+    static RemoveConnectedToken(){
+        sessionStorage.removeItem("connectedUserToken");
+    }
+    static RemoveConnectedUser(){
+        sessionStorage.removeItem("connectedUser");
+    }
+
+
+//quand on logout on l<efface
     static Login(user){
+        //c'est ici qui faut faire le temps de session ::: le prof soustrait le expire time du token avec datetime.now pour calculer le temps dexpiration
         Posts_API.initHttpState();
         return new Promise(resolve => {
             $.ajax({
@@ -104,7 +134,29 @@ class Posts_API {
                 type: "POST",
                 contentType: 'application/json',
                 data: JSON.stringify(user),
-                success: (data) => {  console.log("Login success:", data);  resolve(data); },
+                success: (data) => {  
+                    this.SetConnectedToken(data);
+                    this.SetConnectedUser(data);  
+                    resolve(data); 
+                },
+                error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
+            });
+        });
+    }
+//pas de data jpense
+    static Logout(user){
+        Posts_API.initHttpState();
+        return new Promise(resolve => {
+            $.ajax({
+                url: this.Host_URL() + "/accounts/logout",
+                type: "GET",
+                contentType: 'application/json',
+                data: JSON.stringify(user),
+                success: (data) => { 
+                    this.RemoveConnectedToken(data);
+                    this.RemoveConnectedUser(data);  
+                    resolve(data); 
+                },
                 error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
             });
         });

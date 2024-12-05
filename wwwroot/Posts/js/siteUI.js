@@ -17,6 +17,7 @@ let itemLayout;
 let waiting = null;
 let showKeywords = false;
 let keywordsOnchangeTimger = null;
+let connectedUser = null;
 
 Init_UI();
 async function Init_UI() {
@@ -168,6 +169,12 @@ function showSignup(){
     $('#commit').hide();
     renderUserForm();
 }
+
+function showModify(id){
+    showForm();
+    $('#commit').hide();
+    renderUserEditForm(create);
+}
 function showAbout() {
     hidePosts();
     $("#hiddenIcon").show();
@@ -238,13 +245,18 @@ async function renderPosts(queryString) {
     removeWaitingGif();
     return endOfData;
 }
-function renderPost(post, loggedUser) {
+function renderPost(post) {
     let date = convertToFrenchDate(UTC_To_Local(post.Date));
-    let crudIcon =
-        `
+    let crudIcon = "";
+    if(connectedUser != null){
+        if(connectedUser.isSuper){
+            ///faire tous les roles ici
+        }
+        crudIcon =`
         <span class="editCmd cmdIconSmall fa fa-pencil" postId="${post.Id}" title="Modifier nouvelle"></span>
         <span class="deleteCmd cmdIconSmall fa fa-trash" postId="${post.Id}" title="Effacer nouvelle"></span>
         `;
+    }
 
     return $(`
         <div class="post" id="${post.Id}">
@@ -284,12 +296,36 @@ async function compileCategories() {
 function updateDropDownMenu() {
     let DDMenu = $("#DDMenu");
     let selectClass = selectedCategory === "" ? "fa-check" : "fa-fw";
+    console.log(connectedUser);
     DDMenu.empty();
-    DDMenu.append($(`
-        <div class="dropdown-item menuItemLayout" id="loginCmd">
-            <i class="menuIcon fa fa-sign-in-alt mx-2"></i> Connexion
-        </div>
-        `));
+    if(connectedUser != null){
+        DDMenu.append($(`
+            <div class="dropdown-item menuItemLayout" id="userUI">
+            <div class="userContainer">
+                 <div class="UserAvatarXSmall" style="background-image:url('${connectedUser.Avatar}')"></div>
+                 <div>${connectedUser.Name}</div>
+            </div>
+            `));
+        DDMenu.append($(`<div class="dropdown-divider"></div> `));
+        DDMenu.append($(`
+            <div class="dropdown-item menuItemLayout" id="modifyCmd">
+                <i class="menuIcon fa fa-pencil-square-o mx-2"></i> Modifier Votre Profil
+            </div>
+            `));
+        DDMenu.append($(`
+                <div class="dropdown-item menuItemLayout" id="logoutCmd">
+                    <i class="menuIcon fa fa-sign-out mx-2"></i> Déconnexion
+                </div>
+                `));
+    }
+    else{
+        DDMenu.append($(`
+            <div class="dropdown-item menuItemLayout" id="loginCmd">
+                <i class="menuIcon fa fa-sign-in-alt mx-2"></i> Connexion
+            </div>
+            `));
+    }
+  
     DDMenu.append($(`<div class="dropdown-divider"></div> `));
     DDMenu.append($(`
         <div class="dropdown-item menuItemLayout" id="allCatCmd">
@@ -318,6 +354,20 @@ function updateDropDownMenu() {
     $('#loginCmd').on("click", function () {
         showLogin();
     });
+    //ici faire les deux bouton
+    $('#logoutCmd').on("click", function () {
+        Posts_API.Logout(connectedUser);
+        connectedUser = null;
+        
+        //mettre ces chose la dans logout quand logout va fonctionner
+        Posts_API.RemoveConnectedToken(connectedUser);
+        Posts_API.RemoveConnectedUser(connectedUser); 
+        showLogin();
+    });
+    $('#modifyCmd').on("click", function () {
+        //showModify(connecteduser.id);
+    });
+
     $('#allCatCmd').on("click", async function () {
         selectedCategory = "";
         await showPosts(true);
@@ -577,7 +627,7 @@ function getFormData($form) {
 }
 
 /////////////////////// USER ///////////////////////////////////////////////////////
-
+//sessionStorage
 function renderLoginForm(){
     $("#viewTitle").text("Connexion");
     $("#form").show();
@@ -618,13 +668,14 @@ function renderLoginForm(){
     `);
     initFormValidation(); // important do to after all html injection!
     $('#loginForm').on("submit", async function (event) {
-        console.log("form rempli");
         event.preventDefault();
         let user = getFormData($("#loginForm"));
-        let login = await Posts_API.Login(user);
+        let loginToken = await Posts_API.Login(user);
         if (!Posts_API.error){
             //to do...recuperew le logged in user
-            showError(JSON.stringify(login));
+            //show post et set le token
+            connectedUser = Posts_API.GetConnectedUser();
+            showPosts();
         }
         else
             showError("Une erreur est survenue! " + Posts_API.currentHttpError);
