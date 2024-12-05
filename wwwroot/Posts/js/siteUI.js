@@ -586,9 +586,7 @@ function renderLoginForm(){
         
         <span id="RegisterMessage" style="font-size: 1.5em; display: block; margin-bottom: 10px;">
         </span>
-        <form class="form" id="loginForm">
-            <input type="hidden" name="Id" value=""/>
-            
+        <form class="form" id="loginForm">            
             <div class="form-group">
             <input 
                 class="form-control Email"
@@ -619,16 +617,17 @@ function renderLoginForm(){
         </form>
     `);
     initFormValidation(); // important do to after all html injection!
-    $('loginForm').on("submit", async function (event) {
+    $('#loginForm').on("submit", async function (event) {
+        console.log("form rempli");
         event.preventDefault();
         let user = getFormData($("#loginForm"));
-        showWaitingGif();
-        //ici faire login comme dans le ppost form
-        await Posts_API.Login(user);
-        if (!Posts_API.error)
-            renderPosts();
+        let login = await Posts_API.Login(user);
+        if (!Posts_API.error){
+            //to do...recuperew le logged in user
+            showError(JSON.stringify(login));
+        }
         else
-            renderError("Une erreur est survenue! " + API_getcurrentHttpError());
+            showError("Une erreur est survenue! " + Posts_API.currentHttpError);
     });
     $('#signup').on("click", async function () {
         showSignup();
@@ -675,14 +674,13 @@ function renderVerification(){
         </form>
     `);
     initFormValidation(); // important do to after all html injection!
-    $('loginForm').on("submit", async function (event) {
+    $('verifyForm').on("submit", async function (event) {
         event.preventDefault();
-        let user = getFormData($("#loginForm"));
-        showWaitingGif();
-        //ici faire login comme dans le ppost form
-        await Posts_API.Login(user);
+        let user = getFormData($("#lForm"));
+        let login = await Posts_API.Login(user);
         if (!Posts_API.error)
-            renderPosts();
+            console.log("Résultat :" + toString(login));
+           // renderPosts();
         else
             renderError("Une erreur est survenue! " + API_getcurrentHttpError());
     });

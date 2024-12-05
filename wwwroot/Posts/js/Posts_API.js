@@ -104,7 +104,7 @@ class Posts_API {
                 type: "POST",
                 contentType: 'application/json',
                 data: JSON.stringify(user),
-                success: (data) => { resolve(data); },
+                success: (data) => {  console.log("Login success:", data);  resolve(data); },
                 error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
             });
         });
