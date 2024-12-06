@@ -124,9 +124,7 @@ class Posts_API {
     }
 
 
-//quand on logout on l<efface
     static Login(user){
-        //c'est ici qui faut faire le temps de session ::: le prof soustrait le expire time du token avec datetime.now pour calculer le temps dexpiration
         Posts_API.initHttpState();
         return new Promise(resolve => {
             $.ajax({
@@ -135,6 +133,7 @@ class Posts_API {
                 contentType: 'application/json',
                 data: JSON.stringify(user),
                 success: (data) => {  
+                    //temps dexpiration
                     this.SetConnectedToken(data);
                     this.SetConnectedUser(data);  
                     resolve(data); 

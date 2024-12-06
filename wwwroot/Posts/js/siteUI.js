@@ -300,7 +300,6 @@ function updateDropDownMenu() {
     DDMenu.empty();
     if(connectedUser != null){
         DDMenu.append($(`
-            <div class="dropdown-item menuItemLayout" id="userUI">
             <div class="userContainer">
                  <div class="UserAvatarXSmall" style="background-image:url('${connectedUser.Avatar}')"></div>
                  <div>${connectedUser.Name}</div>
