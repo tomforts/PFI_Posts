@@ -142,6 +142,26 @@ class Posts_API {
             });
         });
     }
+
+    static Verify(id, code){
+        Posts_API.initHttpState();
+        return new Promise(resolve => {
+            $.ajax({
+                url: this.Host_URL() + "/accounts/verify?id=" + id + "&code=" + code,
+                type: "GET",
+                contentType: 'application/json',
+                success: (data) => {  
+                    //temps dexpiration
+                    //Posts_API.Logout(this.GetConnectedUser);
+                    //en attendant que logout fonctionne pas
+                    this.RemoveConnectedToken(data);
+                    this.RemoveConnectedUser(data);  
+                    resolve(data); 
+                },
+                error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
+            });
+        });
+    }
 //pas de data jpense
     static Logout(user){
         Posts_API.initHttpState();

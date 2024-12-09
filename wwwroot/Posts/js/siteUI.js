@@ -158,7 +158,6 @@ function showDeletePostForm(id) {
 
 function showLogin()
 {
-
     showForm();
     $('#commit').hide();
     renderLoginForm();
@@ -168,6 +167,14 @@ function showSignup(){
     showForm();
     $('#commit').hide();
     renderUserForm();
+}
+
+function showVerify()
+{
+    showForm();
+    $('#commit').hide();
+    $('#abort').hide();
+    renderVerifyForm();
 }
 
 function showModify(id){
@@ -629,6 +636,8 @@ function getFormData($form) {
 //sessionStorage
 function renderLoginForm(){
     $("#viewTitle").text("Connexion");
+    $("#emailError").text("");
+    $("#passwordError").text("");
     $("#form").show();
     $("#form").empty();
     $("#form").append(`
@@ -647,6 +656,7 @@ function renderLoginForm(){
                 InvalidMessage="Veuillez entrer un courriel valide"
                 value=""
             />
+            <span id="emailError" style="color: red; font-size: 0.9em;"></span>
             <input 
                 type="password"
                 class="form-control Password"
@@ -658,6 +668,7 @@ function renderLoginForm(){
                 InvalidMessage="Veuillez entrer un mot de passe valide"
                 value=""
             />
+            <span id="passwordError" style="color: red; font-size: 0.9em;"></span>
             </div>
            <br>
             <input type="submit" value="Connexion" id="login" class="btn btn-primary">
@@ -667,17 +678,37 @@ function renderLoginForm(){
     `);
     initFormValidation(); // important do to after all html injection!
     $('#loginForm').on("submit", async function (event) {
+        $("#emailError").text("");
+        $("#passwordError").text("");
         event.preventDefault();
         let user = getFormData($("#loginForm"));
         let loginToken = await Posts_API.Login(user);
         if (!Posts_API.error){
             //to do...recuperew le logged in user
             //show post et set le token
-            connectedUser = Posts_API.GetConnectedUser();
-            showPosts();
+            let tmpUser = Posts_API.GetConnectedUser();
+            if(tmpUser.VerifyCode != "verified"){
+                showVerify();
+            }else{
+                connectedUser = tmpUser;
+                showPosts();
+            }
+            
         }
-        else
-            showError("Une erreur est survenue! " + Posts_API.currentHttpError);
+        else{
+            if(Posts_API.currentStatus == 480){
+                //non verifier
+                $("#emailError").text("Email non vérifier");
+            }
+            else if(Posts_API.currentStatus == 481){
+                //user not found
+                $("#emailError").text("Email inexistant");
+            }
+            else if(Posts_API.currentStatus == 482){
+                //mot de passe incorrect
+                $("#passwordError").text("Mot de passe incorrect");
+            }
+        }
     });
     $('#signup').on("click", async function () {
         showSignup();
@@ -685,54 +716,42 @@ function renderLoginForm(){
 }
 
 //à demander au prof, comment le token focntionne, car pour la verification, il faut recupere le login, donc le id du login avec le token jcomprend rien
-function renderVerification(){
-    $("#viewTitle").text("Connexion");
+function renderVerifyForm(){
+    $("#viewTitle").text("Vérification");
     $("#form").show();
     $("#form").empty();
     $("#form").append(`
         
         <span id="RegisterMessage" style="font-size: 1.5em; display: block; margin-bottom: 10px;">
+        Veuillez entrer le code de vérification que vous avez reçu par courriel.
         </span>
         <form class="form" id="verifyForm">
-            <input type="hidden" name="Id" value=""/>
-            
-            <div class="form-group">
             <input 
-                class="form-control Email"
-                name="Email"
-                id="Email"
-                placeholder="Courriel"
+                class="form-control"
+                name="Verify"
+                id="Verify"
+                placeholder="Code de vérification"
                 required
-                RequireMessage="Veuillez entrer votre courriel" 
-                InvalidMessage="Veuillez entrer un courriel valide"
+                RequireMessage="Veuillez entrer un code" 
                 value=""
             />
-            <input 
-                type="password"
-                class="form-control Password"
-                name="Password"
-                id="Password"
-                placeholder="Mot de passe"
-                required
-                RequireMessage="Veuillez entrer votre mot de passe" 
-                InvalidMessage="Veuillez entrer un mot de passe valide"
-                value=""
-            />
-            </div>
+            <span id="verifyError" style="color: red; font-size: 0.9em;"></span>
            <br>
             <input type="submit" value="Vérifier" id="verify" class="btn btn-primary">
         </form>
     `);
     initFormValidation(); // important do to after all html injection!
-    $('verifyForm').on("submit", async function (event) {
+    $('#verifyForm').on("submit", async function (event) {
         event.preventDefault();
-        let user = getFormData($("#lForm"));
-        let login = await Posts_API.Login(user);
+        let code = $("#Verify").val();
+        let user = Posts_API.GetConnectedUser();
+        await Posts_API.Verify(user.Id, code);
         if (!Posts_API.error)
-            console.log("Résultat :" + toString(login));
+            showLogin();
            // renderPosts();
         else
-            renderError("Une erreur est survenue! " + API_getcurrentHttpError());
+          $("#verifyError").text("Code de vérification incorrect");
+
     });
   
 }
