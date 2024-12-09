@@ -80,24 +80,22 @@ class Posts_API {
             });
         });
     }
-//c'est ca qui faut faire pour toutes les autre fonction,,, mais a arranger je pense pas que ca fonctionne comme du monde...
-    static Register(user){
-        Posts_API.initHttpState();
-        return new Promise(resolve => {
-            $.ajax({
-                url: this.Host_URL() + "/accounts/register",
-                type: "POST",
-                contentType: 'application/json',
-                data: JSON.stringify(user),
-                success: (data) => { resolve(data); },
-                error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
-            });
-        });
-    } 
+    
 //voir dans server.js, il ny a pas de post login de mis dans le serveur etrange
 //C'EST LE TOKEN QUON SAVE
 //faut faire un retrieve remove et add de session storage (SET, GET , REMOVE)
 //quand on login, on l<ajoute
+
+/*static async GetUser(id = null) {
+    Posts_API.initHttpState();
+    return new Promise(resolve => {
+        $.ajax({
+            url: this.Host_URL_URL() + "accounts" +(id != null ? "/" + id : ""),
+            complete: data => { resolve({ ETag: data.getResponseHeader('ETag'), data: data.responseJSON }); },
+            error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
+        });
+    });
+}*/
     static SetConnectedToken(token){
         sessionStorage.setItem("connectedUserToken", token);
     }
@@ -123,7 +121,33 @@ class Posts_API {
         sessionStorage.removeItem("connectedUser");
     }
 
+    static Register(user){
+        Posts_API.initHttpState();
+        return new Promise(resolve => {
+            $.ajax({
+                url: this.Host_URL() + "/accounts/register",
+                type: "POST",
+                contentType: 'application/json',
+                data: JSON.stringify(user),
+                success: (data) => { resolve(data); },
+                error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
+            });
+        });
+    } 
 
+    static ModifyUser(user){
+        Posts_API.initHttpState();
+        return new Promise(resolve => {
+            $.ajax({
+                url: this.Host_URL() + "/accounts/modify",
+                type: "PUT",
+                contentType: 'application/json',
+                data: JSON.stringify(user),
+                success: (data) => { resolve(data); },
+                error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
+            });
+        });
+    }
     static Login(user){
         Posts_API.initHttpState();
         return new Promise(resolve => {
@@ -180,8 +204,8 @@ class Posts_API {
             });
         });
     }
-
-    static async DeleteUser(id){
+//a faire
+    /*static async DeleteUser(id){
         return new Promise(resolve => {
             $.ajax({
                 url: Posts_API.API_URL + "/" + id,
@@ -190,7 +214,7 @@ class Posts_API {
                 error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
             });
         });
-    }
+    }*/
 
    
 }

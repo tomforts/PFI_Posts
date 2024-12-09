@@ -107,5 +107,18 @@
             "writeAccess": 1
         },
         "Id": "b07efae0-b652-11ef-b714-6d26ffd6ec17"
+    },
+    {
+        "Email": "tomforts2@yopmail.com",
+        "Password": "password",
+        "Name": "Thomas frtin",
+        "Avatar": "7e09c5d1-b685-11ef-9305-59c42158eb74.png",
+        "Created": 1733804993,
+        "VerifyCode": "verified",
+        "Authorizations": {
+            "readAccess": 1,
+            "writeAccess": 1
+        },
+        "Id": "7e09c5d0-b685-11ef-9305-59c42158eb74"
     }
 ]

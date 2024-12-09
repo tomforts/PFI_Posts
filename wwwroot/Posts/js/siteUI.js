@@ -155,7 +155,17 @@ function showDeletePostForm(id) {
     $("#viewTitle").text("Retrait");
     renderDeletePostForm(id);
 }
+function showEditUserForm(id){
+    showForm();
+    $("#viewTitle").text("Modification du profil");
+    renderUserForm(id);
+}
 
+function showDeleteUserForm(id){
+    showForm();
+    $("#viewTitle").text("Suppression du profil");
+    renderDeleteUserForm(id)
+}
 function showLogin()
 {
     showForm();
@@ -180,7 +190,7 @@ function showVerify()
 function showModify(id){
     showForm();
     $('#commit').hide();
-    renderUserEditForm(create);
+    renderUserForm(id);
 }
 function showAbout() {
     hidePosts();
@@ -315,7 +325,7 @@ function updateDropDownMenu() {
         DDMenu.append($(`<div class="dropdown-divider"></div> `));
         DDMenu.append($(`
             <div class="dropdown-item menuItemLayout" id="modifyCmd">
-                <i class="menuIcon fa fa-pencil-square-o mx-2"></i> Modifier Votre Profil
+                <i class="menuIcon fa fa-pencil-square mx-2"></i> Modifier Votre Profil
             </div>
             `));
         DDMenu.append($(`
@@ -359,6 +369,12 @@ function updateDropDownMenu() {
 
     $('#loginCmd').on("click", function () {
         showLogin();
+    });
+
+    
+    $('#modifyCmd').on("click", function () {
+        //à modifier, faut prendre le id lololol mais ca marche
+        showModify(3);
     });
     //ici faire les deux bouton
     $('#logoutCmd').on("click", function () {
@@ -683,9 +699,8 @@ function renderLoginForm(){
         event.preventDefault();
         let user = getFormData($("#loginForm"));
         let loginToken = await Posts_API.Login(user);
+        //A ARRANGER,,, LE VERIFIER MAARCHE, MAIS PAS FAIRE UIN LOGIN, SEULEMENT PRENDRE LE USER DANS LA BD...DEMANDER AU PROF
         if (!Posts_API.error){
-            //to do...recuperew le logged in user
-            //show post et set le token
             let tmpUser = Posts_API.GetConnectedUser();
             if(tmpUser.VerifyCode != "verified"){
                 showVerify();
@@ -753,6 +768,36 @@ function renderVerifyForm(){
           $("#verifyError").text("Code de vérification incorrect");
 
     });
+}
+
+
+//À FAIRE
+function renderDeleteUserForm(){
+    $("#form").show();
+    $("#form").empty();
+    $("#form").append(`
+        
+        <span id="RegisterMessage" style="font-size: 1.5em; display: block; margin-bottom: 10px;">
+        Voulez-vous vraiment effacer votre compte?
+        </span>
+        <form class="form" id="deleteForm">
+            
+            <input type="submit" value="Vérifier" id="verify" class="btn btn-primary">
+            <input type="button" value="Annuler" id="cancel" class="btn btn-secondary">
+        </form>
+    `);
+    initFormValidation(); // important do to after all html injection!
+    $('#deleteForm').on("submit", async function (event) {
+        event.preventDefault();
+        let user = Posts_API.GetConnectedUser();
+        await Posts_API.DeleteUser(user.Id);
+        if (!Posts_API.error)
+            showLogin();
+           // renderPosts();
+        else
+          $("#verifyError").text("Code de vérification incorrect");
+
+    });
   
 }
 //va falloir faire le edit pour le account pis le delete aussi
@@ -767,12 +812,15 @@ function newUser() {
     return User;
 }
 
-function renderUserForm(user = null) {
+function renderUserForm(id = null) {
     hidePosts();
-    let create = user == null;
+    let create = id == null;
+    let user;
     if (create) {
         user = newUser();
         user.Avatar = "no-avatar.png";
+    }else{
+        user = Posts_API.GetConnectedUser();
     }
     $("#viewTitle").text(create ? "Création d'un compte" : "Modification du profil");
     $("#form").show();
@@ -887,12 +935,21 @@ function renderUserForm(user = null) {
             delete user.PasswordVerification;
             if(create){
                 user.Created = Local_to_UTC(Date.now());
+                await Posts_API.Register(user);
             }
-            //ici faut juste faire en sorte que email de confirmation et password confirmation n'est pas inclu dans la request..
-            await Posts_API.Register(user);
+            else{
+                user.Created = Local_to_UTC(Date.now());
+                await Posts_API.ModifyUser(user);
+            }
+            
             if (!Posts_API.error){
-                $("#RegisterMessage").text = "Votre compte a été créé. Veuillez réccupérer votre code de vérification dans vos courriels, on vous le demandera à la prochaine connexion!"
-                showLogin();
+                if(create){
+                    $("#RegisterMessage").text = "Votre compte a été créé. Veuillez réccupérer votre code de vérification dans vos courriels, on vous le demandera à la prochaine connexion!"
+                    showLogin();
+                }else{
+                    showPosts();
+                }
+                
             }
             else
                 showError("Une erreur est survenue! " + Posts_API.currentHttpError);
@@ -902,6 +959,10 @@ function renderUserForm(user = null) {
     $('#cancel').on("click", async function () {
         showPosts();
     });
+
+}
+
+function renderEditUserForm(id){
 
 }
 
