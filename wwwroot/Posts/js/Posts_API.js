@@ -97,11 +97,17 @@ class Posts_API {
     });
 }*/
     static SetConnectedToken(token){
+        this.RemoveConnectedToken();
         sessionStorage.setItem("connectedUserToken", token);
     }
 
     static SetConnectedUser(token){
+        this.RemoveConnectedUser();
         sessionStorage.setItem("connectedUser", JSON.stringify(token.User));
+    }
+    static setConnectedUser(user){
+        this.RemoveConnectedUser();
+        sessionStorage.setItem("connectedUser", JSON.stringify(user));
     }
 
     static GetConnectedToken(){
@@ -178,8 +184,8 @@ class Posts_API {
                     //temps dexpiration
                     //Posts_API.Logout(this.GetConnectedUser);
                     //en attendant que logout fonctionne pas
-                    this.RemoveConnectedToken(data);
-                    this.RemoveConnectedUser(data);  
+                    //this.RemoveConnectedUser();
+                    this.setConnectedUser(data);
                     resolve(data); 
                 },
                 error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
@@ -191,7 +197,7 @@ class Posts_API {
         Posts_API.initHttpState();
         return new Promise(resolve => {
             $.ajax({
-                url: this.Host_URL() + "/accounts/logout",
+                url: this.Host_URL() + "/accounts/logout?userId=" + user.Id,
                 type: "GET",
                 contentType: 'application/json',
                 data: JSON.stringify(user),

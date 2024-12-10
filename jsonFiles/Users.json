@@ -96,29 +96,30 @@
         }
     },
     {
-        "Email": "tomforts@yopmail.com",
+        "Email": "tomforts3@yopmail.com",
         "Password": "password",
-        "Name": "Thomas Fortin",
-        "Avatar": "b07f21f0-b652-11ef-b714-6d26ffd6ec17.webp",
-        "Created": 1733783174,
+        "Name": "Thomas Frotin",
+        "Avatar": "107e0191-b71e-11ef-9d99-b5224cd74a8d.png",
+        "Created": 1733870523,
         "VerifyCode": "verified",
         "Authorizations": {
             "readAccess": 1,
             "writeAccess": 1
         },
-        "Id": "b07efae0-b652-11ef-b714-6d26ffd6ec17"
+        "Verifycode": 957739,
+        "Id": "107e0190-b71e-11ef-9d99-b5224cd74a8d"
     },
     {
-        "Email": "tomforts2@yopmail.com",
+        "Email": "tomforts@yopmail.com",
         "Password": "password",
-        "Name": "Thomas frtin",
-        "Avatar": "7e09c5d1-b685-11ef-9305-59c42158eb74.png",
-        "Created": 1733804993,
+        "Name": "asdasd",
+        "Avatar": "0cfe2141-b72c-11ef-bd2d-8fb92e4cbc71.png",
+        "Created": 1733876530,
         "VerifyCode": "verified",
         "Authorizations": {
             "readAccess": 1,
             "writeAccess": 1
         },
-        "Id": "7e09c5d0-b685-11ef-9305-59c42158eb74"
+        "Id": "0cfe2140-b72c-11ef-bd2d-8fb92e4cbc71"
     }
 ]

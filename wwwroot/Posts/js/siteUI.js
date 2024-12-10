@@ -382,8 +382,8 @@ function updateDropDownMenu() {
         connectedUser = null;
         
         //mettre ces chose la dans logout quand logout va fonctionner
-        Posts_API.RemoveConnectedToken(connectedUser);
-        Posts_API.RemoveConnectedUser(connectedUser); 
+      /*  Posts_API.RemoveConnectedToken(connectedUser);
+        Posts_API.RemoveConnectedUser(connectedUser); */
         showLogin();
     });
     $('#modifyCmd').on("click", function () {
@@ -698,14 +698,19 @@ function renderLoginForm(){
         $("#passwordError").text("");
         event.preventDefault();
         let user = getFormData($("#loginForm"));
-        let loginToken = await Posts_API.Login(user);
+        let conUser = Posts_API.GetConnectedUser();
+        if(conUser == undefined){
+            let con = await Posts_API.Login(user);
+            console.log(con);
+            conUser = con.User;
+        }
         //A ARRANGER,,, LE VERIFIER MAARCHE, MAIS PAS FAIRE UIN LOGIN, SEULEMENT PRENDRE LE USER DANS LA BD...DEMANDER AU PROF
         if (!Posts_API.error){
-            let tmpUser = Posts_API.GetConnectedUser();
-            if(tmpUser.VerifyCode != "verified"){
+           // console.log("CONNECTED USER === " + conUser.User.VerifyCode);
+            if(conUser.VerifyCode != "verified"){
                 showVerify();
             }else{
-                connectedUser = tmpUser;
+                connectedUser = conUser;
                 showPosts();
             }
             
@@ -760,9 +765,12 @@ function renderVerifyForm(){
         event.preventDefault();
         let code = $("#Verify").val();
         let user = Posts_API.GetConnectedUser();
-        await Posts_API.Verify(user.Id, code);
-        if (!Posts_API.error)
+        let test = await Posts_API.Verify(user.Id, code);
+        if (!Posts_API.error){
+            console.log(test);
+            
             showLogin();
+        }
            // renderPosts();
         else
           $("#verifyError").text("Code de vérification incorrect");
