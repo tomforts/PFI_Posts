@@ -149,7 +149,10 @@ class Posts_API {
                 type: "PUT",
                 contentType: 'application/json',
                 data: JSON.stringify(user),
-                success: (data) => { resolve(data); },
+                success: (data) => { 
+                    this.setConnectedUser(data)
+                    resolve(data); 
+                },
                 error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
             });
         });
@@ -185,7 +188,8 @@ class Posts_API {
                     //Posts_API.Logout(this.GetConnectedUser);
                     //en attendant que logout fonctionne pas
                     //this.RemoveConnectedUser();
-                    this.setConnectedUser(data);
+                    this.RemoveConnectedUser();
+                    this.RemoveConnectedToken();
                     resolve(data); 
                 },
                 error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }

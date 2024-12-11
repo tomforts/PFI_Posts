@@ -71,8 +71,8 @@
 }
 
 .userContainer {
-    display: flex; /* Place les éléments sur une seule ligne */
-    align-items: center; /* Centre verticalement les éléments */
+    display: flex; 
+    align-items: center; 
 }
 
 

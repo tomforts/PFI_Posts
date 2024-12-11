@@ -772,15 +772,22 @@ function renderLoginForm(){
         $("#passwordError").text("");
         event.preventDefault();
         let user = getFormData($("#loginForm"));
-        let conUser = Posts_API.GetConnectedUser();
-        if(conUser == undefined){
-            let con = await Posts_API.Login(user);
+        let conUser;
+        let con = await Posts_API.Login(user);
+        /*if(conUser == undefined){
+            con = await Posts_API.Login(user);
             console.log(con);
-            conUser = con.User;
-        }
+            
+        }*/
         //A ARRANGER,,, LE VERIFIER MAARCHE, MAIS PAS FAIRE UIN LOGIN, SEULEMENT PRENDRE LE USER DANS LA BD...DEMANDER AU PROF
         if (!Posts_API.error){
            // console.log("CONNECTED USER === " + conUser.User.VerifyCode);
+           /*if(con != null){
+              conUser = con.User;
+           }*/
+          conUser = Posts_API.GetConnectedUser();
+          console.log(conUser);
+           
             if(conUser.VerifyCode != "verified"){
                 showVerify();
             }else{
@@ -842,7 +849,7 @@ function renderVerifyForm(){
         let test = await Posts_API.Verify(user.Id, code);
         if (!Posts_API.error){
             console.log(test);
-            
+            //Posts_API.setConnectedUser(test);
             showLogin();
         }
            // renderPosts();
@@ -890,6 +897,11 @@ function newUser() {
     User.Name = "";
     User.Email = "";
     User.Password = "";
+    User.Authorizations = {
+        writeAccess: 0,
+        readAccess: 0
+    };
+    
     //ici faut faire en sorte que created = la date  créer
     return User;
 }
@@ -899,8 +911,10 @@ function renderUserForm(id = null) {
     let create = id == null;
     let user;
     if (create) {
+        $("#cancel").hide();
         user = newUser();
         user.Avatar = "no-avatar.png";
+
     }else{
         user = Posts_API.GetConnectedUser();
     }
@@ -910,6 +924,9 @@ function renderUserForm(id = null) {
     $("#form").append(`
         <form class="form" id="userForm">
             <input type="hidden" name="Id" value="${user.Id}"/>
+            <input type="hidden" name="writeauthorizations" value="${user.Authorizations.writeAccess}"/>
+            <input type="hidden" name="readauthorizations" value="${user.Authorizations.readAccess}"/>
+
             <div class="form-group">
             <label for="Email" class="form-label">Courriel </label>
             <input 
@@ -984,7 +1001,7 @@ function renderUserForm(id = null) {
             </div>
             <hr>
             <input type="submit" value="Enregistrer" id="saveUser" class="btn btn-primary">
-            <input type="button" value="Annuler" id="cancel" class="btn btn-secondary">
+            <input type="button" value="Effacer Compte" id="cancel" class="btn btn-secondary">
         </form>
     `);
   
@@ -994,9 +1011,8 @@ function renderUserForm(id = null) {
     initFormValidation(); 
     $('#userForm').on("submit", async function (event) {
         event.preventDefault();
-        let isValid = true;
         
-
+        let isValid = true;
         if ($("#Email").val() !== $("#ConfirmEmail").val()) {
             $("#confirmEmailError").text("Les courriels ne correspondent pas.");
             isValid = false;
@@ -1013,14 +1029,23 @@ function renderUserForm(id = null) {
        
         if(isValid){
             let user = getFormData($("#userForm"));
+            user.authorizations = {
+                writeAccess : user.writeauthorizations,
+                readAccess : user.readauthorizations
+            };
+            delete user.writeauthorizations;
+            delete user.readauthorizations;
             delete user.ConfirmEmail;
             delete user.PasswordVerification;
             if(create){
+                delete user.authorizations;
                 user.Created = Local_to_UTC(Date.now());
                 await Posts_API.Register(user);
             }
             else{
                 user.Created = Local_to_UTC(Date.now());
+                if(user.Password == "************")
+                    user.Password = '';
                 await Posts_API.ModifyUser(user);
             }
             
@@ -1029,16 +1054,30 @@ function renderUserForm(id = null) {
                     $("#RegisterMessage").text = "Votre compte a été créé. Veuillez réccupérer votre code de vérification dans vos courriels, on vous le demandera à la prochaine connexion!"
                     showLogin();
                 }else{
-                    showPosts();
+                    connectedUser = Posts_API.GetConnectedUser();
+                    console.log(connectedUser.VerifyCode);
+                    if(connectedUser.VerifyCode != "verified"){
+                        Posts_API.RemoveConnectedUser();
+                        Posts_API.RemoveConnectedToken();
+                        showLogin();
+                    }
+                    else{
+                        showPosts();
+                    }
+                    
                 }
                 
             }
-            else
+            else{
+                console.log("AUTHORIZATIONS :::" + user.authorizations);
                 showError("Une erreur est survenue! " + Posts_API.currentHttpError);
+
+            }
         }
         
     });
     $('#cancel').on("click", async function () {
+        //effacer l'usager
         showPosts();
     });
 
