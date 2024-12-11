@@ -265,14 +265,38 @@ async function renderPosts(queryString) {
 function renderPost(post) {
     let date = convertToFrenchDate(UTC_To_Local(post.Date));
     let crudIcon = "";
+
+    if(post.Likes == null){
+        post.Likes = [];
+    }
+    //un users pas connecté ne peut pas like les postes
+    //ni voir les nombre de like
     if(connectedUser != null){
-        if(connectedUser.isSuper){
-            ///faire tous les roles ici
+
+        if (connectedUser.isAdmin) {
+            crudIcon +=`
+                <span class="editCmd cmdIconSmall fa fa-pencil" postId="${post.Id}" title="Modifier nouvelle"></span>
+                <span class="deleteCmd cmdIconSmall fa fa-trash" postId="${post.Id}" title="Effacer nouvelle"></span>
+            `;
         }
-        crudIcon =`
-        <span class="editCmd cmdIconSmall fa fa-pencil" postId="${post.Id}" title="Modifier nouvelle"></span>
-        <span class="deleteCmd cmdIconSmall fa fa-trash" postId="${post.Id}" title="Effacer nouvelle"></span>
-        `;
+        if(connectedUser.isSuper || connectedUser.isAdmin)
+        {
+
+            if (post.Likes.includes(connectedUser.Id))
+            {
+                crudIcon += `
+                    <span class="likeCmd cmdIconSmall fa fa-thumbs-up" postId="${post.Id}" title="J'aime"></span>
+                `;
+            } else {
+                crudIcon += `
+                    <span class="likeCmd cmdIconSmall fa fa-thumbs-o-up" postId="${post.Id}" title="J'aime"></span>
+                `;
+            }
+            crudIcon += `
+                <span className="likeCount">${post.Likes.length}</span>
+           `;
+
+        }
     }
 
     return $(`
@@ -313,7 +337,6 @@ async function compileCategories() {
 function updateDropDownMenu() {
     let DDMenu = $("#DDMenu");
     let selectClass = selectedCategory === "" ? "fa-check" : "fa-fw";
-    console.log(connectedUser);
     DDMenu.empty();
     if(connectedUser != null){
         DDMenu.append($(`
@@ -413,6 +436,17 @@ function attach_Posts_UI_Events_Callback() {
     $(".deleteCmd").on("click", function () {
         showDeletePostForm($(this).attr("postId"));
     });
+
+    //utiliser la meme methode que le prof pour rajouter les like
+    //toggle le like button
+    $(".likeCmd").off();
+    $(".likeCmd").on("click",async function () {
+        let postId = $(this).attr("postId");
+
+        toggleLikeButton(postId, connectedUser);
+        showPosts();
+    });
+
     $(".moreText").off();
     $(".moreText").click(function () {
         $(`.commentsPanel[postId=${$(this).attr("postId")}]`).show();
@@ -443,6 +477,39 @@ function removeWaitingGif() {
 }
 
 /////////////////////// Posts content manipulation ///////////////////////////////////////////////////////
+async function toggleLikeButton(postId, user) {
+    let postResponse = await Posts_API.Get(postId);
+    let likeCmd = $(`.likeCmd[postId=${postId}]`);
+    let post = postResponse.data;
+
+    console.log(post);
+    //on s'assure que le array est pas vide
+    if (!post.Likes) {
+        post.Likes = [];
+    }
+
+    console.log(user.Id);
+    const isLikedByUser = post.Likes.includes(user.Id);
+
+    //on retire le user de l'array si il a deja like le post
+    if (isLikedByUser) {
+        let userIndex = post.Likes.indexOf(user.Id);
+        post.Likes.splice(userIndex, 1);
+        likeCmd.removeClass('fa-thumbs-up');
+        likeCmd.addClass('fa-thumbs-o-up');
+
+        let imageUrl = post.Image.split('/').pop();
+        post.Image = imageUrl;
+
+        //on ajoute le user dans l'array si il a pas like le post
+    } else {
+        post.Likes.push(user.Id);
+        likeCmd.removeClass('fa-thumbs-o-up');
+        likeCmd.addClass('fa-thumbs-up');
+    }
+
+    await Posts_API.Save(post, false);
+}
 
 function linefeeds_to_Html_br(selector) {
     $.each($(selector), function () {
@@ -552,6 +619,13 @@ function newPost() {
     Post.Text = "";
     Post.Image = "news-logo-upload.png";
     Post.Category = "";
+    Post.Likes = new Array();
+
+    console.log("Title : " + Post.Title);
+    console.log("Text : " + Post.Text);
+    console.log("Image : " + Post.Image.toString());
+    console.log("Category : " + Post.Category);
+    console.log("Likes : " + Post.Likes.length);
     return Post;
 }
 function renderPostForm(post = null) {
