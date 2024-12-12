@@ -7,6 +7,7 @@
 
 import APIServer from "./APIServer.js";
 import RouteRegister from './routeRegister.js';
+import PostModelsController  from "./controllers/PostsController.js";
 
 RouteRegister.add('GET', 'Bookmarks', 'list');
 RouteRegister.add('GET', 'accounts');
@@ -17,10 +18,11 @@ RouteRegister.add('PUT', 'accounts', 'modify');
 RouteRegister.add('GET', 'accounts', 'remove');
 RouteRegister.add('GET', 'accounts', 'conflict');
 RouteRegister.add('POST', 'accounts', 'block');
-RouteRegister.add('POST', 'accounts', 'promote');
-RouteRegister.add('POST', 'posts', 'new');
-RouteRegister.add('PUT', 'posts', 'edit');
+RouteRegister.add('POST', 'accounts', 'promote')
 
+RouteRegister.add('GET', 'likes');
+RouteRegister.add('GET', 'likes', 'like');
+RouteRegister.add('POST', 'likes', 'add');
 
 let server = new APIServer();
 server.start();

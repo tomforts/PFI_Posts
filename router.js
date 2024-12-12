@@ -1,5 +1,6 @@
 import RouteRegister from './routeRegister.js';
 import AccountsController from "./controllers/AccountsController.js";
+import PostModelsController from "./controllers/PostsController.js";
 
 export const API_EndPoint = function (HttpContext) {
     return new Promise(async resolve => {

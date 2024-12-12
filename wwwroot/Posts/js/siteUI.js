@@ -6,6 +6,8 @@ const periodicRefreshPeriod = 2;
 const waitingGifTrigger = 2000;
 const minKeywordLenth = 3;
 const keywordsOnchangeDelay = 500;
+const API_URL = "http://localhost:5000/api/posts";
+const API_URL_Likes = "http://localhost:5000/api/likes";
 
 let categories = [];
 let selectedCategory = "";
@@ -18,6 +20,7 @@ let waiting = null;
 let showKeywords = false;
 let keywordsOnchangeTimger = null;
 let connectedUser = null;
+
 
 Init_UI();
 async function Init_UI() {
@@ -117,6 +120,21 @@ async function showPosts(reset = false) {
     $("#viewTitle").text("Fil de nouvelles");
     periodic_Refresh_paused = false;
     await postsPanel.show(reset);
+    if(JSON.parse(sessionStorage.getItem("connectedUser")) != null){
+        initTimeout(100,function (){
+            $.ajax({
+                url: `${API_URL}/accounts/logout?userId=${user.Id}`,
+                method: 'GET',
+                success: function (){
+                    sessionStorage.clear()
+                    user = null;
+                    updateDropDownMenu();
+                    showPosts();
+                }
+            });
+        });
+        timeout();
+    }
 }
 function hidePosts() {
     postsPanel.hide();
@@ -207,6 +225,134 @@ function showAbout() {
     $("#aboutContainer").show();
 }
 
+function showManageUsers(user){
+    hidePosts();
+    $('#abort').show();
+    $("#viewTitle").text("Gestion des utilisateurs");
+    $("#manageUsers").show();
+    renderManageUsers(user);
+}
+
+async function renderManageUsers(user) {
+    const token = sessionStorage.getItem("bearerToken");
+
+    const response = await fetch(`${API_IP}/accounts`, {
+        method: "GET",
+        headers: {
+            Authorization: token,
+        },
+    });
+
+    const users = await response.json();
+
+    $("#form").show();
+    $("#form").empty();
+    $("#form").append(
+        `<div class="abcdefg">
+
+    </div>`
+    );
+
+    users.forEach((item) => {
+        if (item.Id != user.Id) {
+            let auth = `<i class="menuIcon fa-solid fa-user"></i>`;
+            if (item.Authorizations.writeAccess == 2)
+                auth = `<i class="menuIcon fa-solid fa-user-pen"></i>`;
+            if (item.Authorizations.writeAccess == 3)
+                auth = `<i class="menuIcon fa-solid fa-user-shield"></i>`;
+
+            let banned = false;
+            let ban = `<i class="menuIcon fa-solid fa-ban"></i>`;
+            if (item.Authorizations.writeAccess == 0) {
+                ban = `<i class="blockedIcon fa-solid fa-ban"></i>`;
+                banned = true;
+                auth = "";
+            }
+
+            row = `
+        <div class="user-row">
+          <div class="user-avatar">
+            <img id="avatarDD" src="${item.Avatar}" />
+          </div>
+          <div class="user-contact">
+            <b>${item.Name}</b>
+            ${item.Email}
+          </div>
+          <div class="user-auth">
+            <div class="iconBtn" id="change-auth-${item.Id}">
+              ${auth}
+            </div>
+            <div class="iconBtn" id="change-ban-${item.Id}">
+              ${ban}
+            </div>
+          </div>
+        </div>
+      `;
+
+            $(".abcdefg").append(row);
+
+            $(`#change-auth-${item.Id}`).on("click", function (event) {
+                event.preventDefault();
+                const newUser = {
+                    Id: item.Id,
+                    Email: item.Email,
+                    Password: item.Password,
+                    Name: item.Name,
+                    Avatar: item.Avatar,
+                    Created: item.Created,
+                    VerifyCode: item.VerifyCode,
+                    Authorizations: item.Authorizations,
+                };
+                $.ajax({
+                    url: `${API_IP}/accounts/promote`,
+                    method: "POST",
+                    contentType: "application/json",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    data: JSON.stringify(newUser),
+                });
+                renderManageUsers(user);
+            });
+
+            $(`#change-ban-${item.Id}`).on("click", function (event) {
+                event.preventDefault();
+                const newUser = {
+                    Id: item.Id,
+                    Email: item.Email,
+                    Password: item.Password,
+                    Name: item.Name,
+                    Avatar: item.Avatar,
+                    Created: item.Created,
+                    VerifyCode: item.VerifyCode,
+                    Authorizations: item.Authorizations,
+                };
+                if (banned) {
+                    $.ajax({
+                        url: `${API_IP}/accounts/promote`,
+                        method: "POST",
+                        contentType: "application/json",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                        data: JSON.stringify(newUser),
+                    });
+                } else {
+                    $.ajax({
+                        url: `${API_IP}/accounts/block`,
+                        method: "POST",
+                        contentType: "application/json",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                        data: JSON.stringify(newUser),
+                    });
+                }
+                renderManageUsers(user);
+            });
+        }
+    });
+}
 //////////////////////////// Posts rendering /////////////////////////////////////////////////////////////
 
 //////////////////////////// Posts rendering /////////////////////////////////////////////////////////////
@@ -248,11 +394,10 @@ async function renderPosts(queryString) {
             queryString += "&keywords=" + $("#searchKeys").val().replace(/[ ]/g, ',')
     }
     addWaitingGif();
-    let response = await Posts_API.GetQuery(queryString);
+    let response = await Posts_API.Get(queryString);
     if (!Posts_API.error) {
         currentETag = response.ETag;
         currentPostsCount = parseInt(currentETag.split("-")[0]);
-        console.log(response)
         let Posts = response.data;
         if (Posts.length > 0) {
             Posts.forEach(Post => {
@@ -303,7 +448,7 @@ function renderPost(post) {
                 `;
             }
             crudIcon += `
-            <span className="likeCount">${post.Likes.length}</span>
+                <span className="likeCount">${post.Likes.length}</span>
            `;
 
         }
@@ -336,6 +481,35 @@ function renderPost(post) {
         </div>
     `);
 }
+
+
+
+async function getLikes() {
+    try {
+
+        const response = await fetch(
+            `${API_URL_Likes}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            },
+        );
+        console.log("response", response);
+
+        if (response.ok) {
+            const text = await response.text();
+            const cleanedText = text.replace(/^\uFEFF/, '');
+            return cleanedText ? JSON.parse(cleanedText) : [];
+        } else {
+            console.error('Failed to fetch likes:', response.statusText);
+            return [];
+        }
+    } catch (error) {
+        console.error('Error fetching likes:', error);
+        return [];
+    }
+}
 async function compileCategories() {
     categories = [];
     let response = await Posts_API.GetQuery("?fields=category&sort=category");
@@ -363,6 +537,16 @@ function updateDropDownMenu() {
                  <div>${connectedUser.Name}</div>
             </div>
             `));
+        if(connectedUser.isAdmin){
+            DDMenu.append($(`
+            <div class="dropdown-item menuItemLayout" id="manageUsersCmd">
+                <i class="menuIcon fa fa-user-cog mx-2"></i> Gestion des utilisateurs
+            </div>
+            `));
+            $('#manageUsersCmd').on("click", function () {
+                showManageUsers();
+            });
+        }
         DDMenu.append($(`<div class="dropdown-divider"></div> `));
         DDMenu.append($(`
             <div class="dropdown-item menuItemLayout" id="modifyCmd">
@@ -459,10 +643,12 @@ function attach_Posts_UI_Events_Callback() {
     //toggle le like button
     $(".likeCmd").off();
     $(".likeCmd").on("click",async function () {
+        let likes = await getLikes();
         let postId = $(this).attr("postId");
 
-        toggleLikeButton(postId);
-        showPosts();
+        await toggleLikeButton(postId);
+
+        await showPosts();
     });
 
     $(".moreText").off();
@@ -494,7 +680,7 @@ function removeWaitingGif() {
     $("#waitingGif").remove();
 }
 
-/////////////////////// Posts content manipulation ///////////////////////////////////////////////////////
+///////////////////// Posts content manipulation ///////////////////////////////////////////////////////
 async function toggleLikeButton(postId) {
     let postResponse = await Posts_API.Get(postId);
     let likeCmd = $(`.likeCmd[postId=${postId}]`);
@@ -509,22 +695,56 @@ async function toggleLikeButton(postId) {
 
     //on retire le user de l'array si il a deja like le post
     if (isLikedByUser) {
-        post.Likes = post.Likes.filter(id => id !== connectedUser.Id);
         likeCmd.removeClass('fa-thumbs-up');
         likeCmd.addClass('fa-thumbs-o-up');
 
 
+        await Posts_API.RemoveLike(post.Id);
 
         //on ajoute le user dans l'array si il a pas like le post
     } else {
         console.log(connectedUser.Id)
+        likeCmd.removeClass('fa-thumbs-o-up');
+        likeCmd.addClass('fa-thumbs-up');
+
+        await Posts_API.SaveLike(post.Id);
+
+    }
+
+}
+
+async function toggleLikeButtonsss(postId) {
+    console.log("postId tlb " + postId)
+    let likeCmd = $(`.likeCmd[postId=${postId}]`);
+    let likeCount = $(`.likeCount[postId=${postId}]`);
+    let response = await Posts_API.Get(postId);
+
+    let post = response.data;
+
+    console.log("post tlb " + post);
+    console.log("post.Id tlb " + post.Id);
+    //si le post n'a pas de like, on crée un array vide
+    if(post.Likes == null){
+        post.Likes = [];
+    }
+    console.log("post.Likes tlb " + post.Likes.length);
+
+    if (post.Likes.includes(connectedUser.Id)) {
+        //fileter enleve le user de l'array sil sy trouve
+        post.Likes = post.Likes.filter(id => id !== connectedUser.Id);
+        likeCmd.removeClass('fa-thumbs-up');
+        likeCmd.addClass('fa-thumbs-o-up');
+    }
+    else {
+        //sinon on ajoute le user dans l'array
         post.Likes.push(connectedUser.Id);
         likeCmd.removeClass('fa-thumbs-o-up');
         likeCmd.addClass('fa-thumbs-up');
     }
-    console.log("likepost", post)
-    await Posts_API.Save(post, false);
+    //likeCount.text(post.Likes.length);
+    await Posts_API.Like(post);
 }
+
 
 function linefeeds_to_Html_br(selector) {
     $.each($(selector), function () {

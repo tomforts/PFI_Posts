@@ -51,11 +51,8 @@ export default class Controller {
             this.HttpContext.response.unAuthorized("Unauthorized access");
     }
     put(data) {
-        console.log("test2")
         if (AccessControl.writeGranted(this.HttpContext.authorizations, this.requiredAuthorizations)) {
-            console.log("vagin")
             if (this.HttpContext.path.id !== '') {
-                console.log("bobs2")
                 console.log(this.HttpContext.path)
                 data = this.repository.update(this.HttpContext.path.id, data);
                 if (this.repository.model.state.isValid) {
@@ -71,10 +68,8 @@ export default class Controller {
                     }
                 }
             } else
-                console.log('bobs')
                 this.HttpContext.response.badRequest("The Id of ressource is not specified in the request url.");
         } else
-            console.log("vagin2")
             this.HttpContext.response.unAuthorized("Unauthorized access");
     }
     remove(id) {
