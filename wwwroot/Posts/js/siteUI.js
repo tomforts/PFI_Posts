@@ -94,7 +94,13 @@ function toogleShowKeywords() {
 /////////////////////////// Views management ////////////////////////////////////////////////////////////
 
 function intialView() {
-    $("#createPost").show();
+    connectedUser = Posts_API.GetConnectedUser();
+    if(connectedUser == null){
+        $("#createPost").hide();
+    }
+    else{
+        $("#createPost").show();
+    }
     $("#hiddenIcon").hide();
     $("#hiddenIcon2").hide();
     $('#menu').show();
@@ -263,17 +269,20 @@ async function renderPosts(queryString) {
     return endOfData;
 }
 function renderPost(post) {
+    
     let date = convertToFrenchDate(UTC_To_Local(post.Date));
     let crudIcon = "";
+    
 
     if(post.Likes == null){
         post.Likes = [];
     }
+    console.log
     //un users pas connecté ne peut pas like les postes
     //ni voir les nombre de like
     if(connectedUser != null){
 
-        if (connectedUser.isAdmin) {
+        if (connectedUser.isAdmin || connectedUser.Id == post.Creator.Id) {
             crudIcon +=`
                 <span class="editCmd cmdIconSmall fa fa-pencil" postId="${post.Id}" title="Modifier nouvelle"></span>
                 <span class="deleteCmd cmdIconSmall fa fa-trash" postId="${post.Id}" title="Effacer nouvelle"></span>
@@ -307,7 +316,15 @@ function renderPost(post) {
             </div>
             <div class="postTitle"> ${post.Title} </div>
             <img class="postImage" src='${post.Image}'/>
-            <div class="postDate"> ${date} </div>
+            <div class="postOwnerAndDate">
+                <div class="ownerLayout"> 
+                <div class="UserAvatarXSmall" style="background-image:url('${post.Creator.Avatar}')"></div>
+                 <div>${post.Creator.Name}</div>
+
+                </div>
+                <div class="postDate"> ${date} </div>
+            </div>
+            
             <div postId="${post.Id}" class="postTextContainer hideExtra">
                 <div class="postText" >${post.Text}</div>
             </div>
@@ -619,13 +636,13 @@ function newPost() {
     Post.Text = "";
     Post.Image = "news-logo-upload.png";
     Post.Category = "";
-    Post.Likes = new Array();
+   // Post.Likes = new Array();
 
     console.log("Title : " + Post.Title);
     console.log("Text : " + Post.Text);
     console.log("Image : " + Post.Image.toString());
     console.log("Category : " + Post.Category);
-    console.log("Likes : " + Post.Likes.length);
+   // console.log("Likes : " + Post.Likes.length);
     return Post;
 }
 function renderPostForm(post = null) {
@@ -694,6 +711,7 @@ function renderPostForm(post = null) {
     $('#postForm').on("submit", async function (event) {
         event.preventDefault();
         let post = getFormData($("#postForm"));
+        post.Creator = connectedUser;
         if (post.Category != selectedCategory)
             selectedCategory = "";
         if (create || !('keepDate' in post))
@@ -774,13 +792,17 @@ function renderLoginForm(){
         let user = getFormData($("#loginForm"));
         let conUser;
         let con = await Posts_API.Login(user);
+       
         /*if(conUser == undefined){
             con = await Posts_API.Login(user);
             console.log(con);
             
         }*/
+            //Posts_API.SetConnectedToken(con);
+            //Posts_API.SetConnectedUser(con);
         //A ARRANGER,,, LE VERIFIER MAARCHE, MAIS PAS FAIRE UIN LOGIN, SEULEMENT PRENDRE LE USER DANS LA BD...DEMANDER AU PROF
         if (!Posts_API.error){
+           
            // console.log("CONNECTED USER === " + conUser.User.VerifyCode);
            /*if(con != null){
               conUser = con.User;
@@ -849,8 +871,9 @@ function renderVerifyForm(){
         let test = await Posts_API.Verify(user.Id, code);
         if (!Posts_API.error){
             console.log(test);
-            //Posts_API.setConnectedUser(test);
-            showLogin();
+            Posts_API.setConnectedUser(test);
+            connectedUser = Posts_API.GetConnectedUser();
+            showPosts();
         }
            // renderPosts();
         else
@@ -881,10 +904,10 @@ function renderDeleteUserForm(){
         let user = Posts_API.GetConnectedUser();
         await Posts_API.DeleteUser(user.Id);
         if (!Posts_API.error)
-            showLogin();
+            showPosts();
            // renderPosts();
         else
-          $("#verifyError").text("Code de vérification incorrect");
+        showError("Une erreur est survenue! ", Posts_API.currentHttpError);
 
     });
   
@@ -911,7 +934,6 @@ function renderUserForm(id = null) {
     let create = id == null;
     let user;
     if (create) {
-        $("#cancel").hide();
         user = newUser();
         user.Avatar = "no-avatar.png";
 
@@ -1009,6 +1031,9 @@ function renderUserForm(id = null) {
     //faut faire en sorte que le email n'est pas deja utilisé demander au prof
     //addConflictValidation();
     initFormValidation(); 
+    if(create){
+        $("#cancel").hide();
+    }
     $('#userForm').on("submit", async function (event) {
         event.preventDefault();
         
@@ -1057,8 +1082,6 @@ function renderUserForm(id = null) {
                     connectedUser = Posts_API.GetConnectedUser();
                     console.log(connectedUser.VerifyCode);
                     if(connectedUser.VerifyCode != "verified"){
-                        Posts_API.RemoveConnectedUser();
-                        Posts_API.RemoveConnectedToken();
                         showLogin();
                     }
                     else{
@@ -1069,9 +1092,13 @@ function renderUserForm(id = null) {
                 
             }
             else{
-                console.log("AUTHORIZATIONS :::" + user.authorizations);
-                showError("Une erreur est survenue! " + Posts_API.currentHttpError);
-
+                if(Posts_API.currentStatus == 409){
+                    //non verifier
+                    $("#confirmEmailError").text("Un compte est déjà relié à cet Email");
+                }
+                else{
+                    showError("Une erreur est survenue! " + Posts_API.currentHttpError);
+                }
             }
         }
         

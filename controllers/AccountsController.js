@@ -24,6 +24,8 @@ export default class AccountsController extends Controller {
                 this.HttpContext.response.unAuthorized("Unauthorized access");
         }
     }
+
+    
     // POST: /token body payload[{"Email": "...", "Password": "..."}]
     login(loginInfo) {
         if (loginInfo) {
@@ -218,6 +220,8 @@ export default class AccountsController extends Controller {
         // todo make sure that the requester has legitimity to delete ethier itself or its an admin
         if (AccessControl.writeGrantedAdminOrOwner(this.HttpContext.authorizations, this.requiredAuthorizations, id)) {
             // todo
-        }
+
+        }else
+        this.HttpContext.response.unAuthorized();
     }
 }

@@ -157,6 +157,7 @@ class Posts_API {
             });
         });
     }
+   
     static Login(user){
         Posts_API.initHttpState();
         return new Promise(resolve => {
@@ -188,8 +189,7 @@ class Posts_API {
                     //Posts_API.Logout(this.GetConnectedUser);
                     //en attendant que logout fonctionne pas
                     //this.RemoveConnectedUser();
-                    this.RemoveConnectedUser();
-                    this.RemoveConnectedToken();
+                    this.setConnectedUser(data);
                     resolve(data); 
                 },
                 error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
@@ -214,17 +214,17 @@ class Posts_API {
             });
         });
     }
-//a faire
-    /*static async DeleteUser(id){
+
+    static DeleteUser(id){
         return new Promise(resolve => {
             $.ajax({
-                url: Posts_API.API_URL + "/" + id,
+                url: Posts_API.Host_URL + "accounts/remove" + id,
                 type: "DELETE",
                 success: () => { currentHttpError = ""; resolve(true); },
                 error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
             });
         });
-    }*/
+    }
 
    
 }
