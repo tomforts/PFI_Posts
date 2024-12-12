@@ -216,11 +216,15 @@ class Posts_API {
     }
 
     static DeleteUser(id){
+        Posts_API.initHttpState();
         return new Promise(resolve => {
             $.ajax({
-                url: Posts_API.Host_URL + "accounts/remove" + id,
-                type: "DELETE",
-                success: () => { currentHttpError = ""; resolve(true); },
+                url: this.Host_URL + "/accounts/remove/" + id,
+                type: "GET",
+                contentType: 'application/json',
+                success: (data) => { 
+                    resolve(data);
+                },
                 error: (xhr) => { Posts_API.setHttpErrorState(xhr); resolve(null); }
             });
         });

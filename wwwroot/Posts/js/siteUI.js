@@ -894,7 +894,7 @@ function renderDeleteUserForm(){
         </span>
         <form class="form" id="deleteForm">
             
-            <input type="submit" value="Vérifier" id="verify" class="btn btn-primary">
+            <input type="submit" value="Effacer Mon Compte" id="verify" class="btn btn-primary">
             <input type="button" value="Annuler" id="cancel" class="btn btn-secondary">
         </form>
     `);
@@ -902,15 +902,19 @@ function renderDeleteUserForm(){
     $('#deleteForm').on("submit", async function (event) {
         event.preventDefault();
         let user = Posts_API.GetConnectedUser();
+        Posts_API.Logout(user.Id);
         await Posts_API.DeleteUser(user.Id);
-        if (!Posts_API.error)
+        if (!Posts_API.error){
             showPosts();
+        }
            // renderPosts();
         else
         showError("Une erreur est survenue! ", Posts_API.currentHttpError);
 
     });
-  
+    $('#cancel').on("click", async function () {
+        showPosts();
+    });
 }
 //va falloir faire le edit pour le account pis le delete aussi
 
@@ -1104,8 +1108,7 @@ function renderUserForm(id = null) {
         
     });
     $('#cancel').on("click", async function () {
-        //effacer l'usager
-        showPosts();
+        renderDeleteUserForm();
     });
 
 }
