@@ -219,7 +219,7 @@ class Posts_API {
         Posts_API.initHttpState();
         return new Promise(resolve => {
             $.ajax({
-                url: this.Host_URL + "/accounts/remove/" + id,
+                url: this.Host_URL() + "/accounts/remove/" + id,
                 type: "GET",
                 contentType: 'application/json',
                 success: (data) => { 
