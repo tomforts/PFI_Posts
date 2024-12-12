@@ -22,6 +22,7 @@ export function save(base64Data) {
     return assetFileName;
 }
 export function remove(assetToDelete) {
+    console.log("remove asset");
     if (assetToDelete != '') {
         let assetPath = `./${wwwroot}/${assetsRepository}/${assetToDelete}`;
         fs.unlinkSync(assetPath);

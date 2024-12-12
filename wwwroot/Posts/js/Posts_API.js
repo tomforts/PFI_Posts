@@ -53,10 +53,13 @@ class Posts_API {
         });
     }
     static async Save(data, create = true) {
-        Posts_API.initHttpState();
+        Posts_API.initHttpState();http:
+        console.log(data)
+        var url =  create ? this.API_URL() : this.API_URL() + "/" + data.Id;
+        console.log(url)
         return new Promise(resolve => {
             $.ajax({
-                url: create ? this.API_URL() : this.API_URL() + "/" + data.Id,
+                url: url,
                 type: create ? "POST" : "PUT",
                 contentType: 'application/json',
                 data: JSON.stringify(data),

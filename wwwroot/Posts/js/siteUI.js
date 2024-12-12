@@ -248,10 +248,11 @@ async function renderPosts(queryString) {
             queryString += "&keywords=" + $("#searchKeys").val().replace(/[ ]/g, ',')
     }
     addWaitingGif();
-    let response = await Posts_API.Get(queryString);
+    let response = await Posts_API.GetQuery(queryString);
     if (!Posts_API.error) {
         currentETag = response.ETag;
         currentPostsCount = parseInt(currentETag.split("-")[0]);
+        console.log(response)
         let Posts = response.data;
         if (Posts.length > 0) {
             Posts.forEach(Post => {
@@ -269,10 +270,10 @@ async function renderPosts(queryString) {
     return endOfData;
 }
 function renderPost(post) {
-    
+
     let date = convertToFrenchDate(UTC_To_Local(post.Date));
     let crudIcon = "";
-    
+
 
     if(post.Likes == null){
         post.Likes = [];
@@ -302,7 +303,7 @@ function renderPost(post) {
                 `;
             }
             crudIcon += `
-                <span className="likeCount">${post.Likes.length}</span>
+            <span className="likeCount">${post.Likes.length}</span>
            `;
 
         }
@@ -460,7 +461,7 @@ function attach_Posts_UI_Events_Callback() {
     $(".likeCmd").on("click",async function () {
         let postId = $(this).attr("postId");
 
-        toggleLikeButton(postId, connectedUser);
+        toggleLikeButton(postId);
         showPosts();
     });
 
@@ -494,37 +495,34 @@ function removeWaitingGif() {
 }
 
 /////////////////////// Posts content manipulation ///////////////////////////////////////////////////////
-async function toggleLikeButton(postId, user) {
+async function toggleLikeButton(postId) {
     let postResponse = await Posts_API.Get(postId);
     let likeCmd = $(`.likeCmd[postId=${postId}]`);
     let post = postResponse.data;
 
-    console.log(post);
     //on s'assure que le array est pas vide
     if (!post.Likes) {
         post.Likes = [];
     }
 
-    console.log(user.Id);
-    const isLikedByUser = post.Likes.includes(user.Id);
+    const isLikedByUser = post.Likes.includes(connectedUser.Id);
 
     //on retire le user de l'array si il a deja like le post
     if (isLikedByUser) {
-        let userIndex = post.Likes.indexOf(user.Id);
-        post.Likes.splice(userIndex, 1);
+        post.Likes = post.Likes.filter(id => id !== connectedUser.Id);
         likeCmd.removeClass('fa-thumbs-up');
         likeCmd.addClass('fa-thumbs-o-up');
 
-        let imageUrl = post.Image.split('/').pop();
-        post.Image = imageUrl;
+
 
         //on ajoute le user dans l'array si il a pas like le post
     } else {
-        post.Likes.push(user.Id);
+        console.log(connectedUser.Id)
+        post.Likes.push(connectedUser.Id);
         likeCmd.removeClass('fa-thumbs-o-up');
         likeCmd.addClass('fa-thumbs-up');
     }
-
+    console.log("likepost", post)
     await Posts_API.Save(post, false);
 }
 
@@ -636,16 +634,10 @@ function newPost() {
     Post.Text = "";
     Post.Image = "news-logo-upload.png";
     Post.Category = "";
-   // Post.Likes = new Array();
-
-    console.log("Title : " + Post.Title);
-    console.log("Text : " + Post.Text);
-    console.log("Image : " + Post.Image.toString());
-    console.log("Category : " + Post.Category);
-   // console.log("Likes : " + Post.Likes.length);
     return Post;
 }
 function renderPostForm(post = null) {
+    console.log("create form")
     let create = post == null;
     if (create) post = newPost();
     $("#form").show();
@@ -717,6 +709,9 @@ function renderPostForm(post = null) {
         if (create || !('keepDate' in post))
             post.Date = Local_to_UTC(Date.now());
         delete post.keepDate;
+        if (post.Likes == null) {
+            post.Likes = []
+        }
         post = await Posts_API.Save(post, create);
         if (!Posts_API.error) {
             await showPosts();
@@ -792,24 +787,24 @@ function renderLoginForm(){
         let user = getFormData($("#loginForm"));
         let conUser;
         let con = await Posts_API.Login(user);
-       
+
         /*if(conUser == undefined){
             con = await Posts_API.Login(user);
             console.log(con);
-            
+
         }*/
             //Posts_API.SetConnectedToken(con);
             //Posts_API.SetConnectedUser(con);
         //A ARRANGER,,, LE VERIFIER MAARCHE, MAIS PAS FAIRE UIN LOGIN, SEULEMENT PRENDRE LE USER DANS LA BD...DEMANDER AU PROF
         if (!Posts_API.error){
-           
+
            // console.log("CONNECTED USER === " + conUser.User.VerifyCode);
            /*if(con != null){
               conUser = con.User;
            }*/
           conUser = Posts_API.GetConnectedUser();
           console.log(conUser);
-           
+
             if(conUser.VerifyCode != "verified"){
                 showVerify();
             }else{
@@ -928,7 +923,7 @@ function newUser() {
         writeAccess: 0,
         readAccess: 0
     };
-    
+
     //ici faut faire en sorte que created = la date  créer
     return User;
 }
@@ -1040,7 +1035,7 @@ function renderUserForm(id = null) {
     }
     $('#userForm').on("submit", async function (event) {
         event.preventDefault();
-        
+
         let isValid = true;
         if ($("#Email").val() !== $("#ConfirmEmail").val()) {
             $("#confirmEmailError").text("Les courriels ne correspondent pas.");
@@ -1091,7 +1086,7 @@ function renderUserForm(id = null) {
                     else{
                         showPosts();
                     }
-                    
+
                 }
                 
             }

@@ -4,6 +4,7 @@ import Controller from './Controller.js';
 
 export default class PostModelsController extends Controller {
     constructor(HttpContext) {
+        console.log("test")
         super(HttpContext, new Repository(new PostModel()));
     }
 }
